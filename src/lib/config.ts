@@ -1,0 +1,6 @@
+/* SUPABASE CONFIGURATION */
+
+export const projectId = "ppevdozcxgkjmqdtabta";
+export const publicAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZXZkb3pjeGdram1xZHRhYnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MDUyNDMsImV4cCI6MjA3MTM4MTI0M30.rCEQSoDEaZjTADD5GR629Bz7ZFvmy8AxUKx-9qVXfo8";
+export const serviceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwZXZkb3pjeGdram1xZHRhYnRhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTgwNTI0MywiZXhwIjoyMDcxMzgxMjQzfQ.FwFxxTYLyeGbONxj6XC9AryrC4sakcghb7aGiXhxGec";
+export const projectUrl = "https://ppevdozcxgkjmqdtabta.supabase.co";
