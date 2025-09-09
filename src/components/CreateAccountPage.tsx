@@ -42,7 +42,14 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
     password: '',
     confirmPassword: '',
     phone: '',
-    location: '',
+    
+    cep: '',
+    street: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+
     shelterName: '',
     cnpj: '',
     profilePhoto: null as File | null
@@ -82,6 +89,8 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
     setLoading(true);
     setError(null);
 
+    const fullAddress = `${formData.street}, ${formData.number}, ${formData.neighborhood} - ${formData.city}, ${formData.state}`;
+
     try {
       const result = await onSignup({
         email: formData.email,
@@ -89,7 +98,7 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
         name: formData.fullName,
         type: accountType,
         phone: formData.phone,
-        address: formData.location
+        address: fullAddress,
       });
       
       if (!result.success) {
@@ -104,6 +113,85 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
   };
 
   const isAdopter = accountType === 'adopter';
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 1. Pega o valor atual do input
+    const rawValue = e.target.value;
+
+    // 2. Remove tudo que não for número usando uma expressão regular
+    const digitsOnly = rawValue.replace(/\D/g, '');
+
+    // 3. Limita a quantidade de dígitos a 11 (DDD + 9 dígitos)
+    const limitedDigits = digitsOnly.slice(0, 11);
+
+    // 4. Aplica a máscara
+    let maskedValue = limitedDigits;
+    if (limitedDigits.length > 2) {
+      maskedValue = `(${limitedDigits.slice(0, 2)}) ${limitedDigits.slice(2)}`;
+    }
+    if (limitedDigits.length > 7) {
+      maskedValue = `(${limitedDigits.slice(0, 2)}) ${limitedDigits.slice(2, 7)}-${limitedDigits.slice(7)}`;
+    }
+    
+    // 5. Atualiza o estado
+    setFormData(prev => ({
+      ...prev,
+      phone: maskedValue
+    }));
+  };
+
+  // coloca o tracinho conforme o cep é digitado
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const digitsOnly = rawValue.replace(/\D/g, '');
+    const limitedDigits = digitsOnly.slice(0, 8); // CEP tem 8 dígitos
+
+    let maskedValue = limitedDigits;
+    if (limitedDigits.length > 5) {
+      maskedValue = `${limitedDigits.slice(0, 5)}-${limitedDigits.slice(5)}`;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      cep: maskedValue
+    }));
+  };
+
+  // vamos achar o endereço pelo cep fornecido
+  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+
+    if (cep.length !== 8) {
+      return; // Se o CEP não tiver 8 dígitos, não faz nada
+    }
+
+    setLoading(true); // Ativa o estado de carregamento
+    setError(null);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setError('CEP não encontrado. Verifique o número digitado.');
+        return;
+      }
+
+      // Preenche o formulário com os dados retornados
+      setFormData(prev => ({
+        ...prev,
+        street: data.logradouro,
+        neighborhood: data.bairro,
+        city: data.localidade,
+        state: data.uf,
+      }));
+
+    } catch (err) {
+      setError('Não foi possível buscar o CEP. Tente novamente.');
+    } finally {
+      setLoading(false); // Desativa o estado de carregamento
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -209,36 +297,114 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
               </div>
 
               {/* Telefone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  <Phone className="h-4 w-4 inline mr-2" />
-                  Telefone *
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">
+                      <Phone className="h-4 w-4 inline mr-2" />
+                      Telefone *
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      // ALTERADO AQUI: usamos o novo manipulador
+                      onChange={handlePhoneChange} 
+                      placeholder="(99) 99999-9999"
+                      // NOVO: Limita o tamanho máximo do campo
+                      maxLength={15}
+                    />
+                  </div>
 
-              {/* Localização */}
-              <div className="space-y-2">
-                <Label htmlFor="location">
-                  <MapPin className="h-4 w-4 inline mr-2" />
-                  Localização *
-                </Label>
-                <Input
-                  id="location"
-                  type="text"
-                  required
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  placeholder="Cidade, Estado"
-                />
-              </div>
+              {/* CEP */}
+                  <div className="space-y-2">
+                    <Label htmlFor="cep">
+                      <MapPin className="h-4 w-4 inline mr-2" />
+                      CEP *
+                    </Label>
+                    <Input
+                      id="cep"
+                      type="text"
+                      required
+                      value={formData.cep}
+                      
+                      onChange={handleCepChange} 
+                      onBlur={handleCepBlur} 
+                      placeholder="00000-000"
+                      maxLength={9} // 8 números + 1 tracinho
+                    />
+                  </div>
+
+                  {/* Endereço com 2 colunas */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Rua */}
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="street">Rua / Logradouro *</Label>
+                      <Input
+                        id="street"
+                        type="text"
+                        required
+                        value={formData.street}
+                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        placeholder="Nome da rua"
+                        disabled={loading} // Desabilita enquanto busca o CEP
+                      />
+                    </div>
+                    {/* Número */}
+                    <div className="space-y-2">
+                      <Label htmlFor="number">Número *</Label>
+                      <Input
+                        id="number"
+                        type="text"
+                        required
+                        value={formData.number}
+                        onChange={(e) => handleInputChange('number', e.target.value)}
+                        placeholder="Ex: 123"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bairro, Cidade e Estado */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="neighborhood">Bairro *</Label>
+                      <Input
+                        id="neighborhood"
+                        type="text"
+                        required
+                        value={formData.neighborhood}
+                        onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+                        placeholder="Nome do bairro"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-2 col-span-2">
+                        <Label htmlFor="city">Cidade *</Label>
+                        <Input
+                          id="city"
+                          type="text"
+                          required
+                          value={formData.city}
+                          onChange={(e) => handleInputChange('city', e.target.value)}
+                          placeholder="Sua cidade"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">UF *</Label>
+                        <Input
+                          id="state"
+                          type="text"
+                          required
+                          value={formData.state}
+                          onChange={(e) => handleInputChange('state', e.target.value)}
+                          placeholder="MG"
+                          disabled={loading}
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
               {/* Campos específicos para Anunciantes */}
               {!isAdopter && (
