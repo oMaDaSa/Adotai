@@ -20,20 +20,10 @@ class ApiService {
     try {
       console.log('Iniciando cadastro para:', userData.email);
       
-      // Registrar usuário no Supabase Auth
+      // 1. Registrar usuário no Supabase Auth (isso dispara o gatilho)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
-        options: {
-          emailRedirectTo: undefined, // Não redirecionar para confirmação
-          data: {
-            name: userData.name,
-            type: userData.type,
-            phone: userData.phone,
-            address: userData.address,
-            email_confirm: true // Auto-confirmar email
-          }
-        }
       });
 
       if (authError) {
@@ -42,77 +32,50 @@ class ApiService {
       }
 
       if (!authData.user) {
-        throw new Error('Falha ao criar usuário');
+        throw new Error('Falha ao criar usuário no sistema de autenticação');
       }
 
       console.log('Usuário criado no auth:', authData.user.id);
-      console.log('Email confirmado?', authData.user.email_confirmed_at);
-
-      // Se o email não foi confirmado automaticamente, confirmar usando admin
-      if (!authData.user.email_confirmed_at) {
-        console.log('Confirmando email automaticamente...');
-        try {
-          const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
-            authData.user.id,
-            { email_confirm: true }
-          );
-          if (confirmError) {
-            console.warn('Falha ao confirmar email automaticamente:', confirmError);
-          } else {
-            console.log('Email confirmado automaticamente!');
-          }
-        } catch (confirmErr) {
-          console.warn('Erro ao confirmar email:', confirmErr);
-        }
+      
+      // Opcional mas recomendado: auto-confirmar o email via admin
+      // Isso evita que o usuário precise clicar em um link de confirmação
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
+        authData.user.id,
+        { email_confirm: true }
+      );
+      if (confirmError) {
+        console.warn('Falha ao auto-confirmar email, pode ser necessário confirmar manualmente:', confirmError.message);
+      } else {
+        console.log('Email do usuário auto-confirmado com sucesso!');
       }
 
-      // Aguardar um pouco para garantir que o usuário foi criado
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Criar perfil na tabela profiles
+      // 2. ATUALIZAR o perfil que o gatilho acabou de criar com os dados do formulário
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
+        .update({
           name: userData.name,
           type: userData.type,
           phone: userData.phone,
-          address: userData.address
+          address: userData.address,
+          updated_at: new Date()
         })
+        .eq('id', authData.user.id)
         .select()
         .single();
 
       if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-        
-        // Tentar com cliente admin se falhar
-        const { data: adminProfile, error: adminError } = await supabaseAdmin
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: userData.email,
-            name: userData.name,
-            type: userData.type,
-            phone: userData.phone,
-            address: userData.address
-          })
-          .select()
-          .single();
-
-        if (adminError) {
-          console.error('Erro ao criar perfil com admin:', adminError);
-          throw new Error(`Falha ao criar perfil: ${adminError.message}`);
-        }
-
-        console.log('Perfil criado com sucesso (admin):', adminProfile);
-        return { user: adminProfile as User };
+        console.error('Erro ao ATUALIZAR o perfil:', profileError);
+        // Se a atualização falhar, é uma boa prática deletar o usuário criado na auth
+        // para não deixar um usuário "órfão" no sistema.
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        throw new Error(`Falha ao salvar os dados do perfil: ${profileError.message}`);
       }
 
-      console.log('Perfil criado com sucesso:', profile);
+      console.log('Perfil atualizado com sucesso:', profile);
       return { user: profile as User };
+
     } catch (error: any) {
-      console.error('Erro no cadastro:', error);
+      console.error('Erro geral no processo de cadastro:', error);
       throw error;
     }
   }
