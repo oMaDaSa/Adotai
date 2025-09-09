@@ -381,6 +381,58 @@ class ApiService {
     return data as Animal;
   }
 
+  // Dentro da sua classe ApiService em lib/api.js
+
+  // Função para o admin buscar TODOS os usuários
+  async adminGetAllUsers(): Promise<User[]> {
+    console.log("ADMIN: Buscando todos os usuários...");
+    // Usamos o supabaseAdmin para ignorar o RLS
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("ADMIN: Erro ao buscar usuários", error);
+      throw new Error(`Falha ao buscar usuários: ${error.message}`);
+    }
+    return data as User[];
+  }
+
+  // Função para o admin buscar TODOS os animais
+  async adminGetAllAnimals(): Promise<Animal[]> {
+    console.log("ADMIN: Buscando todos os animais...");
+    const { data, error } = await supabaseAdmin
+      .from('animals')
+      .select('*, advertiser:profiles(name)') // Exemplo de join
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("ADMIN: Erro ao buscar animais", error);
+      throw new Error(`Falha ao buscar animais: ${error.message}`);
+    }
+    // Adaptação para o formato esperado, se necessário
+    return data.map(animal => ({
+        ...animal,
+        advertiser_name: animal.advertiser?.name || 'N/A'
+    })) as Animal[];
+  }
+
+  // Função para o admin buscar TODAS as solicitações de adoção
+  async adminGetAllAdoptionRequests(): Promise<AdoptionRequest[]> {
+      console.log("ADMIN: Buscando todas as solicitações...");
+      const { data, error } = await supabaseAdmin
+        .from('adoption_requests')
+        .select(`*, animal:animals(name), adopter:profiles(name)`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("ADMIN: Erro ao buscar solicitações", error);
+        throw new Error(`Falha ao buscar solicitações: ${error.message}`);
+      }
+      return data as AdoptionRequest[];
+  }
+
   async createAnimal(animalData: Partial<Animal>): Promise<Animal> {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -604,6 +656,17 @@ class ApiService {
     console.log('Transformed adoption requests:', transformedData);
     return transformedData as AdoptionRequest[];
   }
+
+  async adminGetRecentActivity(): Promise<any[]> {
+  const { data, error } = await supabaseAdmin
+    .from('activity_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5); // Pega as 5 atividades mais recentes
+
+  if (error) throw error;
+  return data;
+}
 
   // Get adoption requests for a specific animal
   async getAnimalAdoptionRequests(animalId: string): Promise<AdoptionRequest[]> {

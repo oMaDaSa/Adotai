@@ -77,6 +77,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
   const [userFilterStatus, setUserFilterStatus] = useState("all");
   const [adSearchTerm, setAdSearchTerm] = useState("");
   const [adFilterStatus, setAdFilterStatus] = useState("all");
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
   // State for data
   const [users, setUsers] = useState<User[]>([]);
@@ -94,18 +95,23 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       setLoading(true);
       setError(null);
       
+      // ALTERADO: Usando as novas funções de admin
       const [usersData, animalsData, requestsData] = await Promise.all([
-        api.getUsers(),
-        api.getAnimals(),
-        api.getAdoptionRequests()
+        api.adminGetAllUsers(),
+        api.adminGetAllAnimals(),
+        api.adminGetAllAdoptionRequests()
       ]);
+
+      const activityData = await api.adminGetRecentActivity();
+      setRecentActivity(activityData);
       
       setUsers(usersData);
       setAnimals(animalsData);
       setAdoptionRequests(requestsData);
-    } catch (err) {
+
+    } catch (err: any) { // Adicionado 'any' para acessar a propriedade 'message'
       console.error('Error fetching admin data:', err);
-      setError('Erro ao carregar dados administrativos');
+      setError(err.message || 'Erro ao carregar dados administrativos');
     } finally {
       setLoading(false);
     }
@@ -118,7 +124,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       name: user.name,
       email: user.email,
       type: user.type as 'adopter' | 'advertiser',
-      status: 'active' as const, // We don't have status field in our DB yet
+      status: 'active', 
       registeredAt: user.created_at || new Date().toISOString(),
       lastActivity: user.updated_at || new Date().toISOString(),
       reports: 0, // We don't have reports system implemented yet
@@ -286,7 +292,16 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
-            
+
+            <Button 
+                variant="outline"
+                onClick={fetchAdminData}
+                disabled={loading}
+            >
+                <Activity className="h-4 w-4 mr-2" />
+                {loading ? 'Atualizando...' : 'Atualizar Dados'}
+            </Button>
+          
             <Button 
               variant="outline"
               onClick={onLogout}
@@ -378,30 +393,17 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <UserCheck className="h-4 w-4 text-green-500" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Nova conta criada</p>
-                        <p className="text-xs text-gray-500">Maria Silva se cadastrou como adotante</p>
+                    {recentActivity.map(activity => (
+                      <div key={activity.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        {/* Você pode adicionar ícones baseados no activity.type */}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{activity.type.replace('_', ' ').toUpperCase()}</p>
+                          <p className="text-xs text-gray-500">{activity.description}</p>
+                        </div>
+                        {/* Formatar a data de activity.created_at */}
+                        <span className="text-xs text-gray-400">{formatDate(activity.created_at)}</span>
                       </div>
-                      <span className="text-xs text-gray-400">2h atrás</span>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <PawPrint className="h-4 w-4 text-orange-500" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Novo anúncio publicado</p>
-                        <p className="text-xs text-gray-500">Buddy foi cadastrado pelo Abrigo Esperança</p>
-                      </div>
-                      <span className="text-xs text-gray-400">4h atrás</span>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <Flag className="h-4 w-4 text-red-500" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Nova denúncia</p>
-                        <p className="text-xs text-gray-500">Anúncio do Simba foi denunciado</p>
-                      </div>
-                      <span className="text-xs text-gray-400">6h atrás</span>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

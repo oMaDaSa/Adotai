@@ -91,6 +91,20 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
 
     const fullAddress = `${formData.street}, ${formData.number}, ${formData.neighborhood} - ${formData.city}, ${formData.state}`;
 
+    const nameToSend = accountType === 'advertiser' ? formData.shelterName : formData.fullName;
+
+    // Adicionado um console.log para você ver o que está sendo enviado
+    const userDataToSend = {
+      email: formData.email,
+      password: formData.password,
+      name: nameToSend, // <-- Usando a variável com o nome correto
+      type: accountType,
+      phone: formData.phone,
+      address: fullAddress,
+    };
+    console.log("Enviando para a API:", userDataToSend);
+    // --- FIM DA LÓGICA CORRIGIDA ---
+
     try {
       const result = await onSignup({
         email: formData.email,

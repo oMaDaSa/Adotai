@@ -250,16 +250,16 @@ export default function App() {
         );
       
       case 'create-account':
-        return selectedAccountType ? (
+         return (selectedAccountType && (selectedAccountType === 'adopter' || selectedAccountType === 'advertiser')) ? (
           <CreateAccountPage 
-            accountType={selectedAccountType}
-            onBack={() => {
-              navigateTo('home');
-              setSelectedAccountType(null);
-            }}
-            onSignup={handleSignup}
+          accountType={selectedAccountType} 
+          onBack={() => {
+            navigateTo('home');
+            setSelectedAccountType(null);
+          }}
+          onSignup={handleSignup}
           />
-        ) : null;
+          ) : null;
       
       case 'forgot-password':
         return (
@@ -269,6 +269,15 @@ export default function App() {
           />
         );
       
+      case 'admin-login':
+        return (
+          <AdminLoginPage
+            onBack={() => navigateTo('home')}
+            
+            onLogin={handleAdminLogin} 
+          />
+        );
+
       case 'profile':
         if (!user) return null;
         
@@ -314,13 +323,6 @@ export default function App() {
           />
         ) : null;
       
-      case 'admin-login':
-        return (
-          <AdminLoginPage
-            onBack={() => navigateTo('home')}
-            onLoginSuccess={handleLogin}
-          />
-        );
       
       case 'admin-dashboard':
         return user?.type === 'admin' ? (

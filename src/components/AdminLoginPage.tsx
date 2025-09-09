@@ -5,38 +5,34 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Alert, AlertDescription } from "./ui/alert";
 import { ArrowLeft, Shield, Eye, EyeOff } from "lucide-react";
-import { api } from "../lib/api";
+
 
 interface AdminLoginPageProps {
   onBack: () => void;
-  onLoginSuccess: () => void;
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function AdminLoginPage({ onBack, onLoginSuccess }: AdminLoginPageProps) {
+export function AdminLoginPage({ onBack, onLogin }: AdminLoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    try {
-      const { user, isAdmin } = await api.signin(email, password);
-      
-      if (user && isAdmin) {
-        onLoginSuccess();
-      } else {
-        setError("Credenciais inválidas. Apenas administradores autorizados podem acessar.");
-      }
-    } catch (error: any) {
-      setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
-    } finally {
-      setIsLoading(false);
+    const result = await onLogin(email, password);
+
+    if (!result.success) {
+      setError(result.error || "Ocorreu um erro inesperado.");
     }
+    // Se o login for bem-sucedido, o App.js cuidará da navegação.
+    // O setIsLoading(false) é importante caso o login falhe.
+    setIsLoading(false);
   };
 
   return (

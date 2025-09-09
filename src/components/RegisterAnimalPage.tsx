@@ -263,9 +263,7 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
                     <SelectContent>
                       <SelectItem value="dog">Cachorro</SelectItem>
                       <SelectItem value="cat">Gato</SelectItem>
-                      <SelectItem value="bird">Pássaro</SelectItem>
-                      <SelectItem value="rabbit">Coelho</SelectItem>
-                      <SelectItem value="other">Outro</SelectItem>
+    
                     </SelectContent>
                   </Select>
                 </div>
