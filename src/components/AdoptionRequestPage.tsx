@@ -9,6 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Checkbox } from "./ui/checkbox";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { 
+  translateSpecies,
+  translateSize,
+  translateGender,
+} from "../utils/translate";
+import { 
   ArrowLeft, 
   Heart, 
   MessageCircle, 
@@ -243,8 +248,8 @@ export function AdoptionRequestPage({ animalId, onBack, onStartChat }: AdoptionR
                 <div className="p-4">
                   <h2 className="text-xl font-bold mb-2">{animal.name}</h2>
                   <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <p>{animal.species} • {animal.breed || 'Não informado'}</p>
-                    <p>{animal.age ? `${animal.age} ${animal.age === 1 ? 'ano' : 'anos'}` : 'Idade não informada'} • {animal.size || 'Porte não informado'}</p>
+                    <p>{translateSpecies(animal.species)} • {animal.breed || 'Não informado'}</p>
+                    <p>{animal.age ? `${animal.age} ${animal.age === 1 ? 'ano' : 'anos'}` : 'Idade não informada'} • {translateSize(animal.size)|| 'Porte não informado'}</p>
                     <p className="flex items-center">
                       <User className="h-3 w-3 mr-1" />
                       {animal.advertiser_name}

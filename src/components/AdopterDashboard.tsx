@@ -11,7 +11,7 @@ import {
   Clock,
   CheckCircle,
   Calendar,
-  User,
+  User as UserIcon,
   HeartHandshake,
   Activity
 } from "lucide-react";
@@ -265,7 +265,7 @@ export function AdopterDashboard({ onBack, onStartChat, user }: AdopterDashboard
                   <p className="text-sm text-gray-600">Total de Pedidos</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.totalRequests}</p>
                 </div>
-                <User className="h-8 w-8 text-blue-500" />
+                <UserIcon className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>

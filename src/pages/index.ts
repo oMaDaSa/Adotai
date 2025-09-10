@@ -14,12 +14,14 @@ export { AdoptionRequestPage } from '../components/AdoptionRequestPage';
 // User dashboard pages
 export { AdopterDashboard } from '../components/AdopterDashboard';
 export { AdvertiserProfilePage } from '../components/AdvertiserProfilePage';
+export { UserProfilePage} from '../components/UserProfilePage';
 
 // Animal management pages
 export { RegisterAnimalPage } from '../components/RegisterAnimalPage';
 export { AnimalRequestsPage } from '../components/AnimalRequestsPage';
 export { AdvertiserRequestsPanel } from '../components/AdvertiserRequestsPanel';
 export { RequestDetailsPage } from '../components/RequestDetailsPage';
+export {AnimalDetailsPage} from '../components/AnimalDetailsPage'
 
 // Communication pages
 export { ChatPage } from '../components/ChatPage';

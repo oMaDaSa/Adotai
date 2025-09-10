@@ -348,7 +348,7 @@ export function AdvertiserRequestsPanel({ onBack, onViewRequest, onStartChat }: 
             className="mb-4 hover:bg-gray-100"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Perfil
+            Voltar ao Painel
           </Button>
           
           <div className="flex items-center justify-between">

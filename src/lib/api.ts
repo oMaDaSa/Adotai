@@ -57,7 +57,7 @@ class ApiService {
           type: userData.type,
           phone: userData.phone,
           address: userData.address,
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .eq('id', authData.user.id)
         .select()
@@ -381,7 +381,54 @@ class ApiService {
     return data as Animal;
   }
 
-  // Dentro da sua classe ApiService em lib/api.js
+  // Busca os dados públicos de QUALQUER perfil pelo ID
+  async getUserProfile(userId: string): Promise<User> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error(`Erro ao buscar perfil para o ID: ${userId}`, error);
+      throw new Error('Perfil de usuário não encontrado.');
+    }
+    return data as User;
+  }
+
+  // Busca todos os animais de um anunciante específico
+  async getAnimalsByAdvertiser(advertiserId: string): Promise<Animal[]> {
+    const { data, error } = await supabase
+      .from('animals')
+      .select('*')
+      .eq('advertiser_id', advertiserId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error(`Erro ao buscar animais do anunciante ${advertiserId}`, error);
+      throw new Error('Não foi possível carregar os animais.');
+    }
+    return data as Animal[];
+  }
+
+  // Permite que o usuário logado atualize seu próprio perfil (ex: a nova bio)
+  async updateMyProfile(profileData: { bio?: string; name?: string; phone?: string; address?: string }): Promise<User> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado.');
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(profileData)
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      throw new Error('Não foi possível salvar as alterações.');
+    }
+    return data as User;
+  }
 
   // Função para o admin buscar TODOS os usuários
   async adminGetAllUsers(): Promise<User[]> {
@@ -416,6 +463,70 @@ class ApiService {
         ...animal,
         advertiser_name: animal.advertiser?.name || 'N/A'
     })) as Animal[];
+  }
+
+  // Para um usuário criar uma denúncia
+  async createReport(reportData: { 
+    reported_animal_id?: string; 
+    reported_user_id?: string; 
+    reason: string 
+  }): Promise<any> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado.');
+
+    const { data, error } = await supabase
+      .from('reports')
+      .insert({
+        reporter_id: user.id,
+        reported_animal_id: reportData.reported_animal_id,
+        reported_user_id: reportData.reported_user_id,
+        reason: reportData.reason,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar denúncia:', error);
+      throw new Error(`Falha ao enviar denúncia: ${error.message}`);
+    }
+    return data;
+  }
+
+  // Para o admin buscar TODAS as denúncias pendentes
+  async adminGetPendingReports(): Promise<any[]> {
+    console.log("ADMIN: Buscando todas as denúncias pendentes...");
+    const { data, error } = await supabaseAdmin
+      .from('reports')
+      .select(`
+        *,
+        reporter:profiles!reporter_id(id, name, email),
+        reported_user:profiles!reported_user_id(id, name, email),
+        reported_animal:animals!reported_animal_id(id, name)
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error("ADMIN: Erro ao buscar denúncias", error);
+      throw new Error(`Falha ao buscar denúncias: ${error.message}`);
+    }
+    return data;
+  }
+
+  // Para o admin atualizar o status de uma denúncia
+  async adminUpdateReportStatus(reportId: string, status: 'resolved' | 'dismissed'): Promise<any> {
+    const { data, error } = await supabaseAdmin
+      .from('reports')
+      .update({ status: status, updated_at: new Date() }) // Supondo que você tenha um campo 'updated_at'
+      .eq('id', reportId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`ADMIN: Erro ao atualizar status da denúncia ${reportId}`, error);
+      throw new Error(`Falha ao atualizar denúncia: ${error.message}`);
+    }
+    return data;
   }
 
   // Função para o admin buscar TODAS as solicitações de adoção
@@ -691,15 +802,15 @@ class ApiService {
     }
 
     console.log('Animal found:');
-    console.log('- Animal ID:', animal.id);
-    console.log('- Advertiser ID:', animal.advertiser_id);
+    console.log('- Animal ID:', animal?.id);
+    console.log('- Advertiser ID:', animal?.advertiser_id);
     console.log('- Current User ID:', user.id);
-    console.log('- IDs match:', animal.advertiser_id === user.id);
-    console.log('- Advertiser ID type:', typeof animal.advertiser_id);
+    console.log('- IDs match:', animal?.advertiser_id === user.id);
+    console.log('- Advertiser ID type:', typeof animal?.advertiser_id);
     console.log('- User ID type:', typeof user.id);
 
     // Convert both IDs to strings for comparison to handle any type mismatches
-    const animalAdvertiserId = String(animal.advertiser_id || '').trim();
+    const animalAdvertiserId = String(animal?.advertiser_id || '').trim();
     const currentUserId = String(user.id || '').trim();
     
     // Verificação robusta de propriedade

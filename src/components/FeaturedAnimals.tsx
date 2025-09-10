@@ -3,21 +3,28 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Heart, MapPin, Clock, Eye, MessageCircle } from "lucide-react";
+import { Heart, MapPin, Clock, Eye, MessageCircle, Flag } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
+import { ReportDialog } from "./ReportDialog";
 
 interface FeaturedAnimalsProps {
   onViewMore: () => void;
   onAdoptAnimal: (animalId: string) => void;
   onStartConversation?: (animalId: string, advertiserId: string) => void;
+  onViewProfile: (userId: string) => void;
+  onViewDetails: (animalId: string) => void; 
   user: User | null;
 }
 
-export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation, user }: FeaturedAnimalsProps) {
+export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation,onViewProfile, onViewDetails, user }: FeaturedAnimalsProps) {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportingAnimalId, setReportingAnimalId] = useState<string | null>(null);
+
 
   useEffect(() => {
     fetchFeaturedAnimals();
@@ -43,12 +50,19 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
     }
   };
 
+  // denuncia de anuncio
+
+  const handleReportClick = (animalId: string) => {
+    setReportingAnimalId(animalId);
+    setIsReportDialogOpen(true);
+  };
+
   const handleAdoptClick = (animalId: string) => {
     if (!user) {
       // User will be redirected to login
-      onAdoptAnimal(animalId);
+      onViewDetails(animalId);
     } else if (user.type === 'adopter') {
-      onAdoptAnimal(animalId);
+      onViewDetails(animalId);
     } else {
       // Advertiser or admin cannot adopt
       return;
@@ -57,6 +71,8 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
 
   if (loading) {
     return (
+
+      
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -115,7 +131,26 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {animals.map((animal) => (
-            <Card key={animal.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+
+            <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+              { user &&
+              <button
+                  onClick={() => handleReportClick(animal.id)}
+                  className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-600 hover:text-red-600 transition-colors"
+                  aria-label="Denunciar anúncio"
+                  title="Denunciar anúncio"
+                >
+                  <Flag className="h-4 w-4" />
+                </button>
+                }
+
+                {reportingAnimalId && user && (
+                  <ReportDialog
+                    animalId={reportingAnimalId}
+                    isOpen={isReportDialogOpen}
+                    onClose={() => setIsReportDialogOpen(false)}
+                  />
+                )}
               <div className="relative h-48">
                 <ImageWithFallback
                   src={animal.image_url || animal.image || '/default-pet.svg'}
@@ -169,74 +204,33 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
                   ))}
                   {animal.characteristics?.length > 3 && (
                     <Badge variant="secondary" className="text-xs">
-                      +{animal.characteristics.length - 3}
+                      +{animal.characteristics?.length - 3}
                     </Badge>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  {/* Primeira linha - botão principal */}
                   <div>
-                    {user && user.type === 'adopter' ? (
                       <Button 
                         onClick={() => handleAdoptClick(animal.id)}
                         className="w-full bg-red-500 hover:bg-red-600 text-white"
                         size="sm"
                       >
                         <Heart className="h-4 w-4 mr-2" />
-                        Quero Adotar
-                      </Button>
-                    ) : !user ? (
-                      <Button 
-                        onClick={() => handleAdoptClick(animal.id)}
-                        className="w-full bg-red-500 hover:bg-red-600 text-white"
-                        size="sm"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Quero Adotar
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline"
-                        className="w-full"
-                        size="sm"
-                        disabled
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
                         Ver Detalhes
                       </Button>
-                    )}
                   </div>
-                  
-                  {/* Segunda linha - botão de conversa para adotantes */}
-                  {user && user.type === 'adopter' && onStartConversation && animal.advertiser_id && (
-                    <Button 
-                      onClick={() => onStartConversation(animal.id, animal.advertiser_id)}
-                      variant="outline"
-                      className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
-                      size="sm"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Conversar
-                    </Button>
-                  )}
-                  
-                  {/* Para usuários não logados, também mostrar opção de conversa */}
-                  {!user && onStartConversation && animal.advertiser_id && (
-                    <Button 
-                      onClick={() => onStartConversation(animal.id, animal.advertiser_id)}
-                      variant="outline"
-                      className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
-                      size="sm"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Conversar
-                    </Button>
-                  )}
                 </div>
 
-                <div className="mt-2 text-xs text-gray-500">
-                  Por: {animal.advertiser_name}
+                <div className="mt-2 text-xs text-gray-500 text-left">
+                  <span>Por: </span>
+                  <button 
+                    onClick={() => onViewProfile(animal.advertiser_id)}
+                    className="font-medium text-blue-600 hover:underline"
+                    disabled={!animal.advertiser_id}
+                  >
+                    {animal.advertiser_name}
+                  </button>
                 </div>
               </CardContent>
             </Card>

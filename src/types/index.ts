@@ -8,6 +8,7 @@ export interface User {
   avatar_url?: string; // URL da foto de perfil
   created_at?: string;
   updated_at?: string;
+  bio?: string;
 }
 
 export interface Animal {
@@ -35,6 +36,10 @@ export interface Animal {
   // Legacy fields for compatibility
   gender?: string;
   location?: string;
+  temperament?: string;
+  is_neutered?: boolean;
+  is_vaccinated?: boolean;
+  adoption_requirements?:string;
 }
 
 export interface AdoptionRequest {
@@ -88,7 +93,11 @@ export interface Message {
   created_at: string;
 }
 
-export type PageType = 'home' | 'search' | 'adoption' | 'create-account' | 'login' | 'forgot-password' | 'register-animal' | 'profile' | 'animal-requests' | 'chat' | 'adoption-request' | 'requests-panel' | 'request-details' | 'conversations' | 'simple-conversations' | 'simple-chat' | 'admin-login' | 'admin-dashboard';
+export type PageType = 'home' | 'search' | 'adoption' | 'create-account' 
+| 'login' | 'forgot-password' | 'register-animal' | 'dashboard' | 'animal-requests' | 'chat' 
+| 'adoption-request' | 'requests-panel' | 'request-details' | 'conversations' | 'simple-conversations' 
+| 'simple-chat' | 'admin-login' | 'admin-dashboard'
+| 'user-profile' | 'animal-details';
 
 export type AccountType = 'adopter' | 'advertiser' | 'admin' | null;
 

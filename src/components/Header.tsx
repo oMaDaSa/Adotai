@@ -1,4 +1,4 @@
-import { Heart, Menu, X, Plus, User, LogOut, Shield, MessageCircle } from "lucide-react";
+import { Heart, Menu, X, Plus, User as UserIcon, LogOut, Shield, MessageCircle, UserRoundPen } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -9,12 +9,13 @@ interface HeaderProps {
   onNavigate: (page: PageType) => void;
   onCreateAccount: () => void;
   onLogin: () => void;
+  onViewProfile: (userId: string) => void; 
   onAdminLogin: () => void;
   user: User | null;
   onLogout: () => void;
 }
 
-export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAdminLogin, user, onLogout }: HeaderProps) {
+export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAdminLogin, user, onLogout, onViewProfile }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -27,7 +28,7 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
     if (user?.type === 'admin') {
       onNavigate('admin-dashboard');
     } else {
-      onNavigate('profile');
+      onNavigate('dashboard');
     }
     setIsMenuOpen(false);
   };
@@ -106,7 +107,7 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
                     {user.type === 'admin' ? (
                       <Shield className="h-4 w-4 text-purple-600" />
                     ) : (
-                      <User className="h-4 w-4" />
+                      <UserIcon className="h-4 w-4" />
                     )}
                     <span>{user.name}</span>
                   </Button>
@@ -142,8 +143,18 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
                                 }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                               >
-                                <User className="h-4 w-4 mr-2" />
+                                <UserRoundPen className="h-4 w-4 mr-2" />
                                 Meu Painel
+                              </button>
+                              <button
+                                onClick={() => {
+                                  onViewProfile(user.id);
+                                  setIsUserMenuOpen(false);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              >
+                                <UserIcon className="h-4 w-4 mr-2" />
+                                <span className="text-sm">Meu Perfil</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -165,8 +176,17 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
                                 }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                               >
-                                <User className="h-4 w-4 mr-2" />
+                                <UserRoundPen className="h-4 w-4 mr-2" />
                                 Meu Painel
+                              </button>
+                              <button
+                                onClick={() => {onViewProfile(user.id);
+                                  setIsUserMenuOpen(false);}
+                                }
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              >
+                                <UserIcon className="h-4 w-4 mr-2" />
+                                <span className="text-sm">Meu Perfil</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -292,7 +312,7 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
                     {user.type === 'admin' ? (
                       <Shield className="h-4 w-4 mr-2 text-purple-600" />
                     ) : (
-                      <User className="h-4 w-4 mr-2" />
+                      <UserIcon className="h-4 w-4 mr-2" />
                     )}
                     Olá, {user.name}
                   </div>
@@ -309,12 +329,12 @@ export function Header({ currentPage, onNavigate, onCreateAccount, onLogin, onAd
                       </>
                     ) : user.type === 'adopter' ? (
                       <>
-                        <User className="h-4 w-4 mr-2" />
+                        <UserIcon className="h-4 w-4 mr-2" />
                         Meu Painel
                       </>
                     ) : (
                       <>
-                        <User className="h-4 w-4 mr-2" />
+                        <UserIcon className="h-4 w-4 mr-2" />
                         Meu Perfil
                       </>
                     )}

@@ -6,6 +6,7 @@ import { api } from "./lib/api";
 import { supabase } from "./lib/supabase";
 import { HomePage } from "./pages/HomePage";
 import { 
+  AnimalDetailsPage,
   LoginPage,
   CreateAccountPage,
   ForgotPasswordPage,
@@ -21,7 +22,8 @@ import {
   ChatPage,
   ConversationsList,
   AdminLoginPage,
-  AdminDashboard
+  AdminDashboard,
+  UserProfilePage
 } from "./pages";
 import { SimpleConversationsList } from "./components/SimpleConversationsList";
 import { SimpleChatPage } from "./components/SimpleChatPage";
@@ -51,6 +53,9 @@ export default function App() {
     animalId: string;
   } | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
+  // Implementacao pra salvar id pra usuario visualizar o perfil de outro
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     initializeApp();
@@ -196,12 +201,26 @@ export default function App() {
     }
   };
 
+  // Perfil
+  const handleViewProfile = (userId: string) => {
+    setViewingProfileId(userId);
+    navigateTo('user-profile');
+  };
+
+  const handleViewAnimalDetails = (animalId: string) => {
+    setSelectedAnimalId(animalId);
+    navigateTo(user ? 'animal-details' : 'login');
+  };
+
+
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'home':
         return (
           <HomePage
+            onViewDetails={handleViewAnimalDetails} 
             onViewAnimals={() => navigateTo('search')}
+            onViewProfile={handleViewProfile}
             onAdoptAnimal={(animalId) => {
               console.log('onAdoptAnimal called with animalId:', animalId, 'user:', user);
               if (user?.type === 'adopter') {
@@ -224,6 +243,8 @@ export default function App() {
       case 'search':
         return (
           <SearchPage 
+            onViewDetails={handleViewAnimalDetails} 
+            onViewProfile={handleViewProfile}
             onAdoptAnimal={(animalId) => {
               if (user?.type === 'adopter') {
                 setSelectedAnimalId(animalId);
@@ -238,6 +259,22 @@ export default function App() {
       
       case 'adoption':
         return <ResponsibleAdoptionPage />;
+      
+      case 'animal-details':
+        return selectedAnimalId ? (
+          <AnimalDetailsPage
+            animalId={selectedAnimalId}
+            user={user}
+            onBack={() => navigateTo('search')}
+            // Conectando as funções que a página precisa:
+            onNavigateToProfile={handleViewProfile}
+            onStartConversation={handleStartConversation}
+            onAdopt={(animalId) => { // Lógica para o botão "Quero Adotar"
+              setSelectedAnimalId(animalId);
+              navigateTo('adoption-request');
+            }}
+          />
+        ) : null;
       
       case 'login':
         return (
@@ -278,7 +315,7 @@ export default function App() {
           />
         );
 
-      case 'profile':
+      case 'dashboard':
         if (!user) return null;
         
         if (user.type === 'advertiser') {
@@ -311,13 +348,13 @@ export default function App() {
       case 'register-animal':
         return user?.type === 'advertiser' ? (
           <RegisterAnimalPage 
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             onRegisterSuccess={() => {
               // Recarregar dados do anunciante se a função estiver disponível
               if (window.__refreshAdvertiserData) {
                 window.__refreshAdvertiserData();
               }
-              navigateTo('profile');
+              navigateTo('dashboard');
             }}
             user={user}
           />
@@ -347,7 +384,7 @@ export default function App() {
       case 'animal-requests':
         return selectedAnimalId && user?.type === 'advertiser' ? (
           <AnimalRequestsPage
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             animalId={selectedAnimalId}
             onStartChat={(adopterId, animalId) => {
               setChatParams({ adopterId, animalId });
@@ -359,7 +396,7 @@ export default function App() {
       case 'requests-panel':
         return user?.type === 'advertiser' ? (
           <AdvertiserRequestsPanel
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             onViewRequest={(requestId) => {
               setSelectedRequestId(requestId);
               navigateTo('request-details');
@@ -386,7 +423,7 @@ export default function App() {
       case 'conversations':
         return user ? (
           <ConversationsList
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             onStartChat={(adopterId, animalId) => {
               setChatParams({ adopterId, animalId });
               navigateTo('chat');
@@ -397,7 +434,7 @@ export default function App() {
       case 'chat':
         return chatParams && user ? (
           <ChatPage
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             adopterId={chatParams.adopterId}
             animalId={chatParams.animalId}
             currentUserId={user.id}
@@ -408,7 +445,7 @@ export default function App() {
       case 'simple-conversations':
         return user ? (
           <SimpleConversationsList
-            onBack={() => navigateTo('profile')}
+            onBack={() => navigateTo('dashboard')}
             onSelectConversation={(conversationId) => {
               setSelectedConversationId(conversationId);
               navigateTo('simple-chat');
@@ -424,15 +461,30 @@ export default function App() {
           />
         ) : null;
       
+      case 'user-profile':
+        console.log(`[App.tsx] Renderizando a página 'user-profile' para o ID: ${viewingProfileId}`);
+
+        return viewingProfileId ? (
+          <UserProfilePage
+            userId={viewingProfileId}
+            currentUser={user} // Passa o usuário logado para comparações
+            onBack={() => window.history.back()} // Uma forma simples de voltar
+            onViewAnimalDetails={handleViewAnimalDetails} 
+          />
+        ) : null;
+
+
       default:
         return null;
+      
+      
     }
   };
 
   const shouldShowFooter = ![
     'create-account', 'login', 'forgot-password', 'register-animal', 
-    'profile', 'animal-requests', 'chat', 'adoption-request', 
-    'requests-panel', 'request-details', 'conversations', 'simple-conversations', 'simple-chat', 'admin-login', 'admin-dashboard'
+    'dashboard', 'animal-requests', 'chat', 'adoption-request', 
+    'requests-panel', 'request-details', 'conversations', 'simple-conversations', 'simple-chat', 'admin-login', 'admin-dashboard', 'user-profile',
   ].includes(currentPage);
 
   if (loading) {
@@ -518,6 +570,7 @@ export default function App() {
         onCreateAccount={handleCreateAccount}
         onLogin={() => navigateTo('login')}
         onAdminLogin={() => navigateTo('admin-login')}
+        onViewProfile={handleViewProfile}
         user={user}
         onLogout={handleLogout}
       />
@@ -536,12 +589,14 @@ export default function App() {
       {user?.type === 'adopter' && currentPage === 'home' && (
         <div className="fixed bottom-4 left-4 z-50">
           <button
-            onClick={() => navigateTo('profile')}
+            onClick={() => navigateTo('dashboard')}
             className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
           >
             <span className="text-sm">Meu Painel</span>
           </button>
         </div>
+        
+        
       )}
       
       {/* Componente de diagnóstico para debug */}
