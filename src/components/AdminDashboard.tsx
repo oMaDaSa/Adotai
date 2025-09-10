@@ -53,6 +53,16 @@ interface SystemUser {
   };
 }
 
+interface Report {
+  id: string;
+  reason: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  created_at: string;
+  reporter: { id: string; name: string; email: string; };
+  reported_user?: { id: string; name: string; email: string; };
+  reported_animal?: { id: string; name: string; };
+}
+
 interface AnimalAd {
   id: string;
   name: string;
@@ -85,6 +95,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
   const [adoptionRequests, setAdoptionRequests] = useState<AdoptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reports, setReports] = useState<Report[]>([]); 
   
   useEffect(() => {
     fetchAdminData();
@@ -96,10 +107,11 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       setError(null);
       
       // ALTERADO: Usando as novas funções de admin
-      const [usersData, animalsData, requestsData] = await Promise.all([
+      const [usersData, animalsData, requestsData, reportsData] = await Promise.all([
         api.adminGetAllUsers(),
         api.adminGetAllAnimals(),
-        api.adminGetAllAdoptionRequests()
+        api.adminGetAllAdoptionRequests(),
+        api.adminGetPendingReports()
       ]);
 
       const activityData = await api.adminGetRecentActivity();
@@ -108,6 +120,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       setUsers(usersData);
       setAnimals(animalsData);
       setAdoptionRequests(requestsData);
+      setReports(reportsData); 
 
     } catch (err: any) { // Adicionado 'any' para acessar a propriedade 'message'
       console.error('Error fetching admin data:', err);
@@ -165,8 +178,23 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
     totalAds: adminAnimals.length,
     availableAds: adminAnimals.filter(a => a.status === 'available').length,
     reportedAds: adminAnimals.filter(a => a.reports > 0).length,
-    totalReports: adminUsers.reduce((sum, u) => sum + u.reports, 0) + adminAnimals.reduce((sum, a) => sum + a.reports, 0)
+    totalReports: reports.length
   };
+
+  const reportedAdIds = new Set(
+  reports
+    .filter(report => report.reported_animal) 
+    .map(report => report.reported_animal!.id)
+);
+  const reportedAdsCount = reportedAdIds.size;
+
+// Calcula o número de USUÁRIOS únicos que têm denúncias pendentes
+  const reportedUserIds = new Set(
+    reports
+      .filter(report => report.reported_user)
+      .map(report => report.reported_user!.id)
+  );
+  const reportedUsersCount = reportedUserIds.size;
 
   const getStatusBadge = (status: string, type: 'user' | 'ad' = 'user') => {
     if (type === 'user') {
@@ -232,6 +260,19 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
   const handleAdAction = (action: string, adId: string) => {
     console.log(`Ação ${action} para anúncio ${adId}`);
     // Implementar lógica real aqui
+  };
+
+  // denuncias
+
+  const handleReportAction = async (reportId: string, status: 'resolved' | 'dismissed') => {
+    try {
+      await api.adminUpdateReportStatus(reportId, status);
+      // Remove a denúncia da lista local para a UI atualizar instantaneamente
+      setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+    } catch (err) {
+      console.error(`Failed to update report ${reportId}`, err);
+      // Você pode mostrar um toast/alert de erro aqui
+    }
   };
 
   if (loading) {
@@ -416,32 +457,52 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
-                      <div className="flex items-center space-x-3">
-                        <Flag className="h-4 w-4 text-red-500" />
-                        <div>
-                          <p className="text-sm font-medium">Usuários com denúncias</p>
-                          <p className="text-xs text-gray-500">1 usuário bloqueado</p>
-                        </div>
+                    {reports.length > 0 ? (
+                      <div className="space-y-3">
+                        {/* Mostra este item apenas se houver anúncios denunciados */}
+                        {reportedAdsCount > 0 && (
+                          <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
+                            <div className="flex items-center space-x-3">
+                              <PawPrint className="h-4 w-4 text-yellow-500" />
+                              <div>
+                                <p className="text-sm font-medium">Anúncios denunciados</p>
+                                <p className="text-xs text-gray-500">
+                                  {reportedAdsCount} anúncio(s) para revisar
+                                </p>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => setActiveTab("reports")}>
+                              Revisar
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Mostra este item apenas se houver usuários denunciados */}
+                        {reportedUsersCount > 0 && (
+                          <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
+                            <div className="flex items-center space-x-3">
+                              <Users className="h-4 w-4 text-red-500" />
+                              <div>
+                                <p className="text-sm font-medium">Usuários com denúncias</p>
+                                <p className="text-xs text-gray-500">
+                                  {reportedUsersCount} usuário(s) para revisar
+                                </p>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => setActiveTab("reports")}>
+                              Revisar
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <Button size="sm" variant="outline">
-                        Revisar
-                      </Button>
+                  ) : (
+                    // Mensagem para quando não há denúncias
+                    <div className="text-center py-4 text-gray-500">
+                      <CheckCircle className="mx-auto h-10 w-10 text-green-400" />
+                      <p className="mt-2 text-sm font-medium">Tudo em ordem!</p>
+                      <p className="text-xs">Nenhum item requer atenção no momento.</p>
                     </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
-                      <div className="flex items-center space-x-3">
-                        <PawPrint className="h-4 w-4 text-yellow-500" />
-                        <div>
-                          <p className="text-sm font-medium">Anúncios denunciados</p>
-                          <p className="text-xs text-gray-500">2 anúncios para revisar</p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        Revisar
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -713,6 +774,108 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          {/* Contéudo das denuncias */}
+          <TabsContent value="reports" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Flag className="h-5 w-5 mr-2 text-red-600" />
+                  Gerenciar Denúncias Pendentes ({reports.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Verifica se existem denúncias para mostrar */}
+                {reports.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Cria um card para cada denúncia encontrada */}
+                    {reports.map((report) => (
+                      <div key={report.id} className="p-4 border rounded-lg bg-white shadow-sm">
+                        <div className="flex justify-between items-start">
+                          {/* Lado esquerdo: Informações da denúncia */}
+                          <div>
+                            <p className="text-xs text-gray-500">
+                              Denúncia de <span className="font-semibold text-gray-700">{report.reporter.name}</span> em {formatDate(report.created_at)}
+                            </p>
+                            <p className="my-2 text-gray-800">{report.reason}</p>
+                            <div className="text-xs">
+                              {report.reported_animal && (
+                                <Badge variant="outline">
+                                  Animal: {report.reported_animal.name}
+                                </Badge>
+                              )}
+                              {report.reported_user && (
+                                <Badge variant="outline" className="ml-1">
+                                  Usuário: {report.reported_user.name}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Lado direito: Botões de Ação */}
+                          <div className="flex space-x-2 flex-shrink-0 ml-4">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                                  <XCircle className="h-4 w-4 mr-1" />
+                                  Dispensar
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Dispensar denúncia?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação marcará a denúncia como dispensada, sem aplicar penalidades.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleReportAction(report.id, 'dismissed')}>
+                                    Confirmar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Resolver
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Resolver denúncia?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Isso marcará a denúncia como resolvida. Lembre-se de tomar as ações necessárias (como bloquear o usuário ou remover o anúncio) separadamente.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleReportAction(report.id, 'resolved')}>
+                                    Confirmar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Mensagem exibida se não houver denúncias */
+                  <div className="text-center py-8 text-gray-500">
+                    <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
+                    <p className="mt-2 font-medium">Nenhuma denúncia pendente!</p>
+                    <p className="text-sm">Ótimo trabalho mantendo a plataforma segura.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
           </TabsContent>
         </Tabs>
       </div>

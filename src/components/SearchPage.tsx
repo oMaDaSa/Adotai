@@ -4,12 +4,15 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Filter, MapPin, Heart, Eye } from "lucide-react";
+import { Filter, MapPin, Heart, Eye, Flag } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
+import { ReportDialog } from "./ReportDialog";
 
 interface SearchPageProps {
   onAdoptAnimal: (animalId: string) => void;
+  onViewProfile: (userId: string) => void;
+  onViewDetails: (animalId: string) => void; 
   user: User | null;
 }
 
@@ -19,12 +22,15 @@ interface Filters {
   location: string;
 }
 
-export function SearchPage({ onAdoptAnimal, user }: SearchPageProps) {
+export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }: SearchPageProps) {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [filteredAnimals, setFilteredAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportingAnimalId, setReportingAnimalId] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<Filters>({
     species: "all",
@@ -102,10 +108,17 @@ export function SearchPage({ onAdoptAnimal, user }: SearchPageProps) {
 
   const handleAdoptClick = (animalId: string) => {
     if (!user) {
-      onAdoptAnimal(animalId);
+      onViewDetails(animalId);
     } else if (user.type === 'adopter') {
-      onAdoptAnimal(animalId);
+      onViewDetails(animalId);
     }
+  };
+
+  // denuncia de anuncio
+
+  const handleReportClick = (animalId: string) => {
+    setReportingAnimalId(animalId);
+    setIsReportDialogOpen(true);
   };
 
   if (loading) {
@@ -190,9 +203,6 @@ export function SearchPage({ onAdoptAnimal, user }: SearchPageProps) {
                       <SelectItem value="all">Todas as espécies</SelectItem>
                       <SelectItem value="dog">🐕 Cachorro</SelectItem>
                       <SelectItem value="cat">🐱 Gato</SelectItem>
-                      <SelectItem value="bird">🐦 Pássaro</SelectItem>
-                      <SelectItem value="rabbit">🐰 Coelho</SelectItem>
-                      <SelectItem value="other">🐾 Outros</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -256,7 +266,25 @@ export function SearchPage({ onAdoptAnimal, user }: SearchPageProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAnimals.map((animal) => (
-              <Card key={animal.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-white">
+              
+              <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                { user &&
+              <button
+                  onClick={() => handleReportClick(animal.id)}
+                  className="absolute bottom-3 right-3 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-600 hover:text-red-600 transition-colors"
+                  aria-label="Denunciar anúncio"
+                  title="Denunciar anúncio"
+                >
+                  <Flag className="h-4 w-4" />
+                </button>
+                }
+                {reportingAnimalId && user && (
+                  <ReportDialog
+                    animalId={reportingAnimalId}
+                    isOpen={isReportDialogOpen}
+                    onClose={() => setIsReportDialogOpen(false)}
+                  />
+                )}
                 <div className="relative h-48">
                   <ImageWithFallback
                     src={animal.image_url || animal.image || '/default-pet.svg'}
@@ -317,37 +345,27 @@ export function SearchPage({ onAdoptAnimal, user }: SearchPageProps) {
                   </div>
 
                   <div className="flex space-x-2">
-                    {user && user.type === 'adopter' ? (
+          
                       <Button 
                         onClick={() => handleAdoptClick(animal.id)}
                         className="flex-1 bg-red-500 hover:bg-red-600 text-white"
                       >
                         <Heart className="h-4 w-4 mr-2" />
-                        Quero Adotar
-                      </Button>
-                    ) : !user ? (
-                      <Button 
-                        onClick={() => handleAdoptClick(animal.id)}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Quero Adotar
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline"
-                        className="flex-1"
-                        disabled
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
                         Ver Detalhes
                       </Button>
-                    )}
+                    
                   </div>
 
-                  <div className="mt-2 text-xs text-gray-500">
-                    Por: {animal.advertiser_name || 'Anunciante'}
-                  </div>
+                  <div className="mt-2 text-xs text-gray-500 text-left">
+                  <span>Por: </span>
+                  <button 
+                    onClick={() => onViewProfile(animal.advertiser_id)}
+                    className="font-medium text-blue-600 hover:underline"
+                    disabled={!animal.advertiser_id}
+                  >
+                    {animal.advertiser_name}
+                  </button>
+                </div>
                 </CardContent>
               </Card>
             ))}

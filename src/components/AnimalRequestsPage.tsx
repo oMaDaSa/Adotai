@@ -133,7 +133,7 @@ export function AnimalRequestsPage({ animalId, onBack, onStartChat }: AnimalRequ
               className="mb-4 hover:bg-gray-100"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar ao Perfil
+              Voltar ao Painel
             </Button>
           </div>
           <Card>
@@ -158,7 +158,7 @@ export function AnimalRequestsPage({ animalId, onBack, onStartChat }: AnimalRequ
               className="mb-4 hover:bg-gray-100"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar ao Perfil
+              Voltar ao Painel
             </Button>
           </div>
           <Card>
@@ -191,7 +191,7 @@ export function AnimalRequestsPage({ animalId, onBack, onStartChat }: AnimalRequ
             className="mb-4 hover:bg-gray-100"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Perfil
+            Voltar ao Painel
           </Button>
         </div>
 

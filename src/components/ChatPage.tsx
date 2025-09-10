@@ -5,6 +5,11 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { 
+  translateSpecies,
+  translateSize,
+  translateGender,
+} from "../utils/translate";
+import { 
   ArrowLeft,
   Send,
   User,
@@ -346,10 +351,10 @@ export function ChatPage({ adopterId, animalId, currentUserId, currentUserType, 
               <h4 className="font-semibold text-gray-900 mb-2">Informações do Animal</h4>
               <div className="space-y-1 text-sm">
                 <p><strong>Nome:</strong> {animal.name}</p>
-                <p><strong>Espécie:</strong> {animal.species}</p>
+                <p><strong>Espécie:</strong> {translateSpecies(animal.species)}</p>
                 <p><strong>Raça:</strong> {animal.breed || 'Não informado'}</p>
                 <p><strong>Idade:</strong> {animal.age} anos</p>
-                <p><strong>Tamanho:</strong> {animal.size}</p>
+                <p><strong>Porte:</strong> {translateSize(animal.size)}</p>
               </div>
             </CardContent>
           </Card>
