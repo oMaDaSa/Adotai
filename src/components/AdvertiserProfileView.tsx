@@ -12,10 +12,11 @@ import { Textarea } from './ui/textarea';
 interface AdvertiserProfileViewProps {
   profile: User;
   currentUser: User | null;
+  onBack: () => void
   onViewAnimalDetails: (animalId: string) => void; 
 }
 
-export function AdvertiserProfileView({ profile: initialProfile, currentUser, onViewAnimalDetails }: AdvertiserProfileViewProps) {
+export function AdvertiserProfileView({ profile: initialProfile, currentUser, onBack, onViewAnimalDetails }: AdvertiserProfileViewProps) {
   const [profile, setProfile] = useState(initialProfile);
   const [animals, setAnimals] = useState<Animal[]>([]);
   
@@ -48,6 +49,7 @@ export function AdvertiserProfileView({ profile: initialProfile, currentUser, on
     <div className="p-4 sm:p-8 bg-gray-50 min-h-screen">
       <ProfileHeader 
         profile={profile} 
+        onBack={onBack} 
         currentUser={currentUser}
         onEdit={() => setIsEditing(true)} // Ativa o modo de edição
         isEditable={true} // Diz ao header que esta página pode ser editada

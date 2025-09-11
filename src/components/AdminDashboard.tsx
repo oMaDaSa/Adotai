@@ -170,7 +170,7 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
   
   const adaptAnimalsForAdmin = (animals: Animal[]) => {
   return animals.map(animal => {
-    // --- NOVA LÓGICA PARA CONTAR INTERAÇÕES TOTAIS ---
+    
     // 1. Contar as solicitações de adoção para este animal
     const adoptionRequestsCount = adoptionRequests.filter(
       req => req.animal_id === animal.id
@@ -197,7 +197,7 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
       postedAt: animal.created_at,
       lastUpdated: animal.updated_at,
       reports: 0, 
-      views: animal.view_count || 0, // Nota: views ainda precisam de lógica de backend
+      views: animal.view_count || 0, 
       interactions: totalInteractions, // <--- VALOR CALCULADO AQUI
       image: animal.image_url || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop'
     };

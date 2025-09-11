@@ -8,16 +8,20 @@ import { Edit } from 'lucide-react';
 
 interface ProfileHeaderProps {
   profile: User;
+  onBack: () => void;
   currentUser: User | null; // Para saber quem está logado
   onEdit?: () => void; // Função para iniciar a edição
   isEditable?: boolean; // Para controlar se o botão deve aparecer
 }
 
-export function ProfileHeader({ profile, currentUser, isEditable, onEdit }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, currentUser, isEditable, onEdit, onBack }: ProfileHeaderProps) {
   const isOwnProfile = currentUser?.id === profile.id;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+       <button onClick={onBack} style={{ marginBottom: '16px' }}>
+        &larr; Voltar
+      </button>
       <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
         <ImageWithFallback
           src={profile.avatar_url || '/default-avatar.svg'}

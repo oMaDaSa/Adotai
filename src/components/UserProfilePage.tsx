@@ -13,7 +13,7 @@ interface UserProfilePageProps {
   onBack: () => void;
 }
 
-export function UserProfilePage({ userId, currentUser, onBack, onViewAnimalDetails }: UserProfilePageProps) {
+export function UserProfilePage({ userId, currentUser, onViewAnimalDetails, onBack  }: UserProfilePageProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,13 +41,17 @@ export function UserProfilePage({ userId, currentUser, onBack, onViewAnimalDetai
   // Decide qual componente de visualização renderizar
   return (
     <div>
+      
       {profile.type === 'adopter' ? (
-        <AdopterProfileView profile={profile} currentUser={currentUser} />
+        <AdopterProfileView profile={profile} 
+        currentUser={currentUser}
+        onBack={onBack} />
       ) : (
         <AdvertiserProfileView 
           profile={profile} 
           currentUser={currentUser}
-          onViewAnimalDetails={onViewAnimalDetails} // <-- Passando a prop
+          onViewAnimalDetails={onViewAnimalDetails}
+          onBack={onBack} // <-- Passando a prop
         />
       )}
     </div>

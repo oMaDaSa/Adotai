@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 interface CreateAccountPageProps {
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   accountType: 'adopter' | 'advertiser';
   onBack: () => void;
   onSignup: (userData: {
@@ -31,7 +32,7 @@ interface CreateAccountPageProps {
   }) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccountPageProps) {
+export function CreateAccountPage({ accountType, onBack, onSignup,onLogin }: CreateAccountPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -109,7 +110,7 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
       const result = await onSignup({
         email: formData.email,
         password: formData.password,
-        name: formData.fullName,
+        name: nameToSend,
         type: accountType,
         phone: formData.phone,
         address: fullAddress,
@@ -117,6 +118,17 @@ export function CreateAccountPage({ accountType, onBack, onSignup }: CreateAccou
       
       if (!result.success) {
         setError(result.error || 'Erro ao criar conta');
+      }
+
+      const { error: signInError } = await onLogin(formData.email, formData.password);
+
+      if (signInError) {
+        setError(`Conta criada, mas houve um erro ao fazer login: ${signInError}`);
+        // Neste caso, você pode querer redirecionar para a página de login
+      } else {
+        // Sucesso! O usuário está cadastrado E logado.
+        // A navegação para o dashboard (geralmente tratada pelo componente pai
+        // ao detectar a mudança de estado de autenticação) agora vai funcionar.
       }
       // If successful, the parent component will handle navigation
     } catch (err) {

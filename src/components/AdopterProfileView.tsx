@@ -11,9 +11,10 @@ import { ProfileHeader } from './ProfileHeader';
 interface AdopterProfileViewProps {
   profile: User;
   currentUser: User | null;
+  onBack: () => void
 }
 
-export function AdopterProfileView({ profile: initialProfile, currentUser }: AdopterProfileViewProps) {
+export function AdopterProfileView({ profile: initialProfile, currentUser, onBack }: AdopterProfileViewProps) {
   const [profile, setProfile] = useState(initialProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState(profile.bio || '');
@@ -40,6 +41,7 @@ export function AdopterProfileView({ profile: initialProfile, currentUser }: Ado
       <ProfileHeader 
         profile={profile} 
         currentUser={currentUser}
+        onBack={onBack}
         onEdit={() => setIsEditing(true)} // A função que ativa o modo de edição
         isEditable={true} // Diz ao header que esta página PODE ser editada
       />

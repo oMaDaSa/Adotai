@@ -291,6 +291,7 @@ export default function App() {
          return (selectedAccountType && (selectedAccountType === 'adopter' || selectedAccountType === 'advertiser')) ? (
           <CreateAccountPage 
           accountType={selectedAccountType} 
+          onLogin={handleLogin}
           onBack={() => {
             navigateTo('home');
             setSelectedAccountType(null);
@@ -471,8 +472,15 @@ export default function App() {
           <UserProfilePage
             userId={viewingProfileId}
             currentUser={user} // Passa o usuário logado para comparações
-            onBack={() => window.history.back()} // Uma forma simples de voltar
+            onBack={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                  window.location.href = '/'; // fallback pra home ou rota principal
+                }
+            }} // Uma forma simples de voltar
             onViewAnimalDetails={handleViewAnimalDetails} 
+            
           />
         ) : null;
 

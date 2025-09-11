@@ -34,8 +34,6 @@ class ApiService {
       if (!authData.user) {
         throw new Error('Falha ao criar usuário no sistema de autenticação');
       }
-
-      console.log('Usuário criado no auth:', authData.user.id);
       
       // Opcional mas recomendado: auto-confirmar o email via admin
       // Isso evita que o usuário precise clicar em um link de confirmação
