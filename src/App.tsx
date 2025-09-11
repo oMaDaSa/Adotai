@@ -472,13 +472,7 @@ export default function App() {
           <UserProfilePage
             userId={viewingProfileId}
             currentUser={user} // Passa o usuário logado para comparações
-            onBack={() => {
-              if (window.history.length > 1) {
-                window.history.back();
-              } else {
-                  window.location.href = '/'; // fallback pra home ou rota principal
-                }
-            }} // Uma forma simples de voltar
+            onBack={() => navigateTo('home')}
             onViewAnimalDetails={handleViewAnimalDetails} 
             
           />

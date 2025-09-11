@@ -3,7 +3,7 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Heart, MapPin, Clock, Eye, MessageCircle, Flag } from "lucide-react";
+import { Heart, MapPin, Clock, Eye, MessageCircle, Flag, Syringe, ShieldCheck, Stethoscope  } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
 import { ReportDialog } from "./ReportDialog";
@@ -131,17 +131,6 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {animals.map((animal) => (
             <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
-              { user &&
-                <button
-                  onClick={() => handleReportClick(animal.id)}
-                  className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-600 hover:text-red-600 transition-colors"
-                  aria-label="Denunciar anúncio"
-                  title="Denunciar anúncio"
-                >
-                  <Flag className="h-4 w-4" />
-                </button>
-              }
-              
               <div className="aspect-square w-full relative">
                 <ImageWithFallback
                   src={animal.image_url || animal.image || '/default-pet.svg'}
@@ -150,7 +139,7 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
                 />
                 <div className="absolute top-3 left-3 flex space-x-2">
                   <Badge className="bg-white text-gray-800 font-medium">
-                    {animal.species === 'dog' ? '🐕 Cachorro' : 
+                    {animal.species === 'dog' ? '🐶 Cachorro' : 
                      animal.species === 'cat' ? '🐱 Gato' : 
                      '🐾 ' + animal.species}
                   </Badge>
@@ -160,9 +149,33 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
                     </Badge>
                   )}
                 </div>
+
+                <div className="absolute bottom-3 left-3 flex flex-wrap gap-2">
+                    {/* Vacinado */}
+                    {animal.is_vaccinated && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                        <Syringe className="h-3 w-3 mr-1" /> Vacinado
+                      </Badge>
+                    )}
+                    
+                    {/* Castrado */}
+                    {animal.is_neutered && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                        <ShieldCheck className="h-3 w-3 mr-1" /> Castrado
+                      </Badge>
+                    )}
+
+                    {/* Vermifugado */}
+                    {animal.is_dewormed && (
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                        <Stethoscope className="h-3 w-3 mr-1" /> Vermifugado
+                      </Badge>
+                    )}
+                  </div>
               </div>
               
-              <CardContent className="p-4">
+              
+              <CardContent className="p-4 flex flex-col flex-grow">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-semibold">{animal.name}</h3>
                   <div className="text-right text-sm text-gray-500">
@@ -172,16 +185,8 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center text-sm text-gray-600 mb-2">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {animal.advertiser_address || animal.location || 'Localização não informada'}
-                </div>
 
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {animal.description}
-                </p>
-
+               
                 <div className="flex flex-wrap gap-1 mb-4">
                   {animal.characteristics?.slice(0, 3).map((char, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
@@ -195,7 +200,8 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2">
+                {/* Este container com 'mt-auto' é empurrado para o final */}
+                <div className="mt-auto pt-2">
                   <Button 
                     onClick={() => onViewDetails(animal.id)}
                     className="w-full bg-red-500 hover:bg-red-600 text-white"
@@ -220,6 +226,8 @@ export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user 
             </Card>
           ))}
         </div>
+
+        
 
         <div className="text-center">
           <Button 

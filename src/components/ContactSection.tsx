@@ -44,14 +44,7 @@ export function ContactSection() {
                   <p className="text-sm text-gray-600">Vila Madalena, São Paulo - SP</p>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <Clock className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium">Horário de Visitas</p>
-                  <p className="text-sm text-gray-600">Sábado e Domingo, 9h às 17h</p>
-                </div>
-              </div>
+            
             </CardContent>
           </Card>
 
@@ -62,7 +55,7 @@ export function ContactSection() {
               <div className="space-y-3 text-sm text-red-700">
                 <div className="flex items-start space-x-3">
                   <span className="flex-shrink-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-medium">1</span>
-                  <p>Clique em "Veja Mais"</p>
+                  <p>Clique em "Veja Detalhes"</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="flex-shrink-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-medium">2</span>

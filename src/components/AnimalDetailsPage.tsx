@@ -37,6 +37,7 @@ export function AnimalDetailsPage({ animalId, user, onBack, onNavigateToProfile,
         setLoading(true);
         setError(null);
         const data = await api.getAnimal(animalId);
+        console.log('DADOS DO ANIMAL RECEBIDOS DA API:', data); 
         setAnimal(data);
         setSelectedImage(data.image_url || null); // Define a imagem principal
       } catch (err: any) {
@@ -111,7 +112,7 @@ export function AnimalDetailsPage({ animalId, user, onBack, onNavigateToProfile,
                 <Badge variant="secondary">{animal.breed}</Badge>
                 <Badge variant="secondary">{animal.age} {animal.age === 1 ? 'ano' : 'anos'}</Badge>
                 <Badge variant="secondary">{translateSize(animal.size)}</Badge>
-                <Badge variant="secondary">{translateGender(animal.gender) }</Badge>
+                <Badge variant="secondary">{translateGender(animal.gender ?? "") }</Badge>
               </div>
             </div>
 
@@ -165,6 +166,7 @@ export function AnimalDetailsPage({ animalId, user, onBack, onNavigateToProfile,
                 <p><strong>Necessidades Especiais:</strong> {animal.special_needs || 'Nenhuma'}</p>
                 <p><strong>Castrado:</strong> {animal.is_neutered ? 'Sim' : 'Não'}</p>
                 <p><strong>Vacinado:</strong> {animal.is_vaccinated ? 'Sim' : 'Não'}</p>
+                <p><strong>Vermifugado:</strong> {animal.is_dewormed ? 'Sim' : 'Não'}</p>
               </TabsContent>
               <TabsContent value="requirements" className="mt-4 text-gray-700 text-sm">
                 {animal.adoption_requirements || 'Nenhum requisito específico informado.'}

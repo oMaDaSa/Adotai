@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Filter, MapPin, Heart, Eye, Flag } from "lucide-react";
+import { Filter, MapPin, Heart, Eye, Flag,  Syringe, ShieldCheck, Stethoscope  } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
 import { ReportDialog } from "./ReportDialog";
@@ -117,12 +117,8 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
   };
 
   const handleAdoptClick = (animalId: string) => {
-    if (!user) {
-      onViewDetails(animalId);
-    } else if (user.type === 'adopter') {
-      onViewDetails(animalId);
-    }
-  };
+  onViewDetails(animalId); // Sempre chama a função, sem condições
+};
 
   // denuncia de anuncio
 
@@ -211,7 +207,7 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas as espécies</SelectItem>
-                      <SelectItem value="dog">🐕 Cachorro</SelectItem>
+                      <SelectItem value="dog">🐶 Cachorro</SelectItem>
                       <SelectItem value="cat">🐱 Gato</SelectItem>
                     </SelectContent>
                   </Select>
@@ -318,7 +314,7 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                   />
                   <div className="absolute top-3 left-3 flex space-x-2">
                     <Badge className="bg-white text-gray-800 font-medium">
-                      {animal.species === 'dog' ? '🐕 Cachorro' : 
+                      {animal.species === 'dog' ? '🐶 Cachorro' : 
                        animal.species === 'cat' ? '🐱 Gato' : 
                        '🐾 ' + animal.species}
                     </Badge>
@@ -328,6 +324,31 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                       </Badge>
                     )}
                   </div>
+
+                   <div className="absolute bottom-3 left-3 flex flex-wrap gap-2">
+                    {/* Vacinado */}
+                    {animal.is_vaccinated && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                        <Syringe className="h-3 w-3 mr-1" /> Vacinado
+                      </Badge>
+                    )}
+                    
+                    {/* Castrado */}
+                    {animal.is_neutered && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                        <ShieldCheck className="h-3 w-3 mr-1" /> Castrado
+                      </Badge>
+                    )}
+
+                    {/* Vermifugado */}
+                    {animal.is_dewormed && (
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                        <Stethoscope className="h-3 w-3 mr-1" /> Vermifugado
+                      </Badge>
+                    )}
+                  </div>
+              
+                  
                   {animal.age && (
                     <div className="absolute top-3 right-3">
                       <Badge className="bg-green-100 text-green-700">
@@ -355,7 +376,6 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {animal.description}
                   </p>
-
                   <div className="flex flex-wrap gap-1 mb-4">
                     {animal.color && (
                       <Badge variant="secondary" className="text-xs">

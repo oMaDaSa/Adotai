@@ -39,6 +39,7 @@ export interface Animal {
   location?: string;
   temperament?: string;
   is_neutered?: boolean;
+  is_dewormed?: boolean,
   is_vaccinated?: boolean;
   adoption_requirements?:string;
   view_count: number;

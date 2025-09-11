@@ -48,6 +48,7 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
     description: '',
     specialNeeds: '',
     vaccinated: '',
+    dewormed: '',
     neutered: '',
     temperament: '',
     adoptionRequirements: ''
@@ -119,17 +120,18 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
       const animalData = {
         name: formData.name,
         species: formData.species,
-        breed: formData.breed || null,
-        age: parseInt(formData.age) || null,
+        breed: formData.breed || undefined,
+        age: parseInt(formData.age) || undefined,
         size: formData.size,
         gender: formData.gender,
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        description: formData.description || null,
-        is_neutered: formData.neutered === 'yes',
-        is_vaccinated: formData.vaccinated === 'complete' || formData.vaccinated === 'partial',
-        special_needs: formData.specialNeeds || null,
-        temperament: formData.temperament || null,
-        adoption_requirements: formData.adoptionRequirements || null,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        description: formData.description || undefined,
+        is_neutered: formData.neutered === 'no',
+        is_dewormed: formData.neutered === 'no',
+        is_vaccinated: formData.vaccinated === 'no',
+        special_needs: formData.specialNeeds || undefined,
+        temperament: formData.temperament || undefined,
+        adoption_requirements: formData.adoptionRequirements || undefined,
         image_url: imageUrl,
         additional_images: additionalImagesUrls,
         status: 'available' as const
@@ -413,7 +415,7 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
               <CardTitle>Saúde e Comportamento</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="vaccinated">Situação Vacinal</Label>
                   <Select onValueChange={(value) => handleInputChange('vaccinated', value)}>
@@ -421,10 +423,8 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="complete">Vacinação completa</SelectItem>
-                      <SelectItem value="partial">Vacinação parcial</SelectItem>
-                      <SelectItem value="none">Não vacinado</SelectItem>
-                      <SelectItem value="unknown">Desconhecido</SelectItem>
+                      <SelectItem value="yes">Vacinação completa</SelectItem>
+                      <SelectItem value="no">Não vacinado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -438,7 +438,20 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
                     <SelectContent>
                       <SelectItem value="yes">Castrado</SelectItem>
                       <SelectItem value="no">Não castrado</SelectItem>
-                      <SelectItem value="unknown">Desconhecido</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dewormed">Vermifugado</Label>
+                  <Select onValueChange={(value) => handleInputChange('dewormed', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Sim</SelectItem>
+                      <SelectItem value="no">Não</SelectItem>
+                      
                     </SelectContent>
                   </Select>
                 </div>
