@@ -29,6 +29,7 @@ export function AnimalDetailsPage({ animalId, user, onBack, onNavigateToProfile,
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
 
   useEffect(() => {
     const fetchAnimalDetails = async () => {
@@ -46,6 +47,15 @@ export function AnimalDetailsPage({ animalId, user, onBack, onNavigateToProfile,
     };
     fetchAnimalDetails();
   }, [animalId]);
+
+  useEffect(() => {
+    // Registra a visualização assim que o componente for montado com um animalId válido.
+    // A verificação 'user?.id !== animal?.advertiser_id' impede que o próprio dono
+    // infle a contagem de views do seu anúncio.
+    if (animalId && animal && user?.id !== animal.advertiser_id) {
+      api.recordAnimalView(animalId);
+    }
+  }, [animalId, animal, user]);
 
   if (loading) {
     return <div className="p-8 text-center">Carregando informações do pet...</div>;

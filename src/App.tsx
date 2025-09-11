@@ -208,6 +208,7 @@ export default function App() {
   };
 
   const handleViewAnimalDetails = (animalId: string) => {
+    console.log(`[App.tsx] A função handleViewDetails foi chamada com o ID do animal: ${animalId}`);
     setSelectedAnimalId(animalId);
     navigateTo(user ? 'animal-details' : 'login');
   };
@@ -365,6 +366,8 @@ export default function App() {
         return user?.type === 'admin' ? (
           <AdminDashboard
             onBack={() => navigateTo('home')}
+            onViewProfile={handleViewProfile}
+            onViewDetails={handleViewAnimalDetails} 
             onLogout={handleLogout}
           />
         ) : null;

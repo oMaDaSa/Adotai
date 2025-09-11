@@ -6,4 +6,6 @@ export const supabase = createClient(
   publicAnonKey
 )
 
+
+
 export type { User } from '@supabase/supabase-js'

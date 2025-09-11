@@ -213,8 +213,6 @@ export function AnimalRequestsPage({ animalId, onBack, onStartChat }: AnimalRequ
                 <p className="text-gray-600">
                   {animal.species === 'dog' ? '🐕 Cachorro' : 
                    animal.species === 'cat' ? '🐱 Gato' : 
-                   animal.species === 'bird' ? '🐦 Pássaro' : 
-                   animal.species === 'rabbit' ? '🐰 Coelho' : 
                    '🐾 ' + animal.species} • {animal.age} {animal.age === 1 ? 'ano' : 'anos'} • {
                    animal.size === 'small' ? 'Pequeno' : 
                    animal.size === 'medium' ? 'Médio' : 

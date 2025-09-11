@@ -5,6 +5,7 @@ export interface User {
   type: 'adopter' | 'advertiser' | 'admin';
   phone?: string;
   address?: string;
+  status: string;
   avatar_url?: string; // URL da foto de perfil
   created_at?: string;
   updated_at?: string;
@@ -16,7 +17,7 @@ export interface Animal {
   name: string;
   species: string;
   breed?: string;
-  age?: number; // Changed from string to number to match DB schema
+  age?: number; 
   size?: string;
   color?: string;
   description?: string;
@@ -40,6 +41,7 @@ export interface Animal {
   is_neutered?: boolean;
   is_vaccinated?: boolean;
   adoption_requirements?:string;
+  view_count: number;
 }
 
 export interface AdoptionRequest {

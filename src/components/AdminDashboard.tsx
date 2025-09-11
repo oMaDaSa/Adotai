@@ -30,11 +30,14 @@ import {
   MessageSquare
 } from "lucide-react";
 import { api } from "../lib/api";
-import type { User, Animal, AdoptionRequest } from "../types";
+import type { User, Animal, AdoptionRequest, Conversation } from "../types";
+import { translateSize, translateSpecies } from "@/utils/translate";
 
 interface AdminDashboardProps {
   onBack: () => void;
   onLogout: () => void;
+  onViewProfile: (userId: string) => void;
+  onViewDetails: (animalId: string) => void; 
 }
 
 interface SystemUser {
@@ -80,7 +83,7 @@ interface AnimalAd {
   image: string;
 }
 
-export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userFilterType, setUserFilterType] = useState("all");
@@ -93,6 +96,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [adoptionRequests, setAdoptionRequests] = useState<AdoptionRequest[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<Report[]>([]); 
@@ -107,11 +111,12 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       setError(null);
       
       // ALTERADO: Usando as novas funções de admin
-      const [usersData, animalsData, requestsData, reportsData] = await Promise.all([
+      const [usersData, animalsData, requestsData, reportsData, conversationsData] = await Promise.all([
         api.adminGetAllUsers(),
         api.adminGetAllAnimals(),
         api.adminGetAllAdoptionRequests(),
-        api.adminGetPendingReports()
+        api.adminGetPendingReports(),
+        api.adminGetAllConversations()
       ]);
 
       const activityData = await api.adminGetRecentActivity();
@@ -121,6 +126,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       setAnimals(animalsData);
       setAdoptionRequests(requestsData);
       setReports(reportsData); 
+      setConversations(conversationsData);
 
     } catch (err: any) { // Adicionado 'any' para acessar a propriedade 'message'
       console.error('Error fetching admin data:', err);
@@ -132,25 +138,54 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
 
   // Transform real API data for admin interface
   const adaptUsersForAdmin = (users: User[]) => {
-    return users.map(user => ({
+  return users.map(user => {
+    // Lógica para contar as solicitações de adoção que você já tem
+    const userAdoptionRequests = adoptionRequests.filter(
+      req => req.adopter_id === user.id
+    ).length;
+
+    // --- NOVA LÓGICA PARA CONTAR CONVERSAS ---
+    const userConversations = conversations.filter(
+      convo => convo.adopter_id === user.id || convo.advertiser_id === user.id
+    ).length;
+    // ------------------------------------------
+
+    return {
       id: user.id,
       name: user.name,
       email: user.email,
       type: user.type as 'adopter' | 'advertiser',
-      status: 'active', 
+      status: user.status, 
       registeredAt: user.created_at || new Date().toISOString(),
       lastActivity: user.updated_at || new Date().toISOString(),
-      reports: 0, // We don't have reports system implemented yet
+      reports: 0, 
       interactions: {
-        conversations: 0, // Could be calculated from conversations
-        adoptionRequests: 0, // Could be calculated from adoption requests
+        conversations: userConversations, // <--- VALOR CALCULADO AQUI
+        adoptionRequests: userAdoptionRequests,
         animalsPosted: user.type === 'advertiser' ? animals.filter(a => a.advertiser_id === user.id).length : undefined
       }
-    }));
-  };
+    };
+  });
+};
   
   const adaptAnimalsForAdmin = (animals: Animal[]) => {
-    return animals.map(animal => ({
+  return animals.map(animal => {
+    // --- NOVA LÓGICA PARA CONTAR INTERAÇÕES TOTAIS ---
+    // 1. Contar as solicitações de adoção para este animal
+    const adoptionRequestsCount = adoptionRequests.filter(
+      req => req.animal_id === animal.id
+    ).length;
+      
+    // 2. Contar as conversas para este animal
+    const conversationsCount = conversations.filter(
+      convo => convo.animal_id === animal.id
+    ).length;
+
+    // 3. Somar tudo para ter o total de interações
+    const totalInteractions = adoptionRequestsCount + conversationsCount;
+    // ----------------------------------------------------
+      
+    return {
       id: animal.id,
       name: animal.name,
       species: animal.species,
@@ -161,12 +196,13 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
       advertiserId: animal.advertiser_id,
       postedAt: animal.created_at,
       lastUpdated: animal.updated_at,
-      reports: 0, // We don't have reports system implemented yet
-      views: 0, // We don't have views tracking yet
-      interactions: 0, // We don't have interactions tracking yet
-      image: animal.image || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop'
-    }));
-  };
+      reports: 0, 
+      views: animal.view_count || 0, // Nota: views ainda precisam de lógica de backend
+      interactions: totalInteractions, // <--- VALOR CALCULADO AQUI
+      image: animal.image_url || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop'
+    };
+  });
+};
   
   const adminUsers = adaptUsersForAdmin(users);
   const adminAnimals = adaptAnimalsForAdmin(animals);
@@ -252,14 +288,41 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
     return matchesSearch && matchesStatus;
   });
 
-  const handleUserAction = (action: string, userId: string) => {
-    console.log(`Ação ${action} para usuário ${userId}`);
-    // Implementar lógica real aqui
+  const handleUserAction = async (action: 'block' | 'unblock' |'delete', userId: string) => {
+    try {
+      if (action === 'block') {
+        await api.adminBlockUser(userId);
+        // Atualiza a UI
+        setUsers(users => users.map(u => u.id === userId ? { ...u, status: 'blocked' } : u));
+      } else if (action === 'unblock') {
+        await api.adminUnblockUser(userId);
+        // Atualiza a UI
+        setUsers(users => users.map(u => u.id === userId ? { ...u, status: 'active' } : u));
+        } else if(action==='delete'){
+          await api.adminDeleteUser(userId);
+          // Remove o usuário da lista na tela para uma atualização instantânea
+          setUsers(currentUsers => currentUsers.filter(u => u.id !== userId));
+          alert('Usuário excluído com sucesso!');
+        }
+      }catch (err: any) {
+        console.error(`Falha ao excluir usuário:`, err);
+        // Mostra a mensagem de erro para o admin
+        alert(`Erro ao excluir usuário: ${err.message}`);
+    }
   };
 
-  const handleAdAction = (action: string, adId: string) => {
-    console.log(`Ação ${action} para anúncio ${adId}`);
-    // Implementar lógica real aqui
+  const handleAdAction = async (action: 'remove', adId: string) => {
+    if (action === 'remove') {
+      try {
+        await api.adminDeleteAnimal(adId);
+        // Remove o animal da lista local para a UI atualizar instantaneamente
+        setAnimals(currentAnimals => currentAnimals.filter(a => a.id !== adId));
+        alert('Anúncio removido com sucesso!');
+      } catch (err: any) {
+        console.error(`Falha ao remover anúncio:`, err);
+        alert(`Erro ao remover anúncio: ${err.message}`);
+      }
+    }
   };
 
   // denuncias
@@ -587,46 +650,68 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => onViewProfile(user.id)}
+                          >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver Perfil
                         </Button>
-                        
-                        {user.status === 'active' ? (
+
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                                <Ban className="h-4 w-4 mr-1" />
-                                Bloquear
-                              </Button>
+                              {user.status === "blocked" ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-green-600 hover:text-green-700"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Desbloquear
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Ban className="h-4 w-4 mr-1" />
+                                  Bloquear
+                                </Button>
+                              )}
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Bloquear usuário</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  {user.status === "blocked"
+                                    ? "Confirmar desbloqueio"
+                                    : "Confirmar bloqueio"}
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja bloquear {user.name}? O usuário não poderá mais acessar a plataforma.
+                                  {user.status === "blocked"
+                                    ? "Tem certeza que deseja desbloquear este usuário? Ele poderá acessar novamente sua conta."
+                                    : "Tem certeza que deseja bloquear este usuário? Ele não poderá acessar sua conta até ser desbloqueado."}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleUserAction('block', user.id)}>
-                                  Bloquear
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    handleUserAction(
+                                      user.status === "blocked" ? "unblock" : "block",
+                                      user.id
+                                    )
+                                  }
+                                  className={
+                                    user.status === "blocked"
+                                      ? "bg-green-600 hover:bg-green-700"
+                                      : "bg-red-600 hover:bg-red-700"
+                                  }
+                                >
+                                  {user.status === "blocked" ? "Desbloquear" : "Bloquear"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        ) : user.status === 'blocked' ? (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-green-600 hover:text-green-700"
-                            onClick={() => handleUserAction('unblock', user.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Reativar
-                          </Button>
-                        ) : null}
-                        
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
@@ -723,7 +808,7 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-1">
-                          {ad.species} • {ad.breed} • {ad.age}
+                          {translateSpecies(ad.species)} • {ad.breed} • {ad.age}
                         </p>
                         <p className="text-sm text-gray-600 mb-1">
                           Anunciante: {ad.advertiser}
@@ -736,15 +821,12 @@ export function AdminDashboard({ onBack, onLogout }: AdminDashboardProps) {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => onViewDetails(ad.id)}>
                           <Eye className="h-4 w-4 mr-1" />
-                          Ver Detalhes
+                          Ver Detalhes 
                         </Button>
                         
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Editar
-                        </Button>
+              
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

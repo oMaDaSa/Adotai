@@ -465,6 +465,27 @@ class ApiService {
     })) as Animal[];
   }
 
+  async adminGetAllConversations(): Promise<Conversation[]> {
+    console.log("ADMIN: Buscando todas as conversas...");
+    
+    // Usamos o supabaseAdmin para ignorar o RLS e ter acesso a todas as conversas
+    const { data, error } = await supabaseAdmin
+      .from('conversations')
+      .select(`
+        *,
+        animal:animals(id, name),
+        adopter:profiles!adopter_id(id, name, email),
+        advertiser:profiles!advertiser_id(id, name, email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("ADMIN: Erro ao buscar conversas", error);
+      throw new Error(`Falha ao buscar conversas: ${error.message}`);
+    }
+    return data as Conversation[];
+  }
+
   // Para um usuário criar uma denúncia
   async createReport(reportData: { 
     reported_animal_id?: string; 
@@ -542,6 +563,89 @@ class ApiService {
         throw new Error(`Falha ao buscar solicitações: ${error.message}`);
       }
       return data as AdoptionRequest[];
+  }
+
+  // Função completa para BLOQUEAR um usuário
+  async adminBlockUser(userId: string): Promise<User> {
+    console.log(`ADMIN: Bloqueando usuário ${userId}`);
+    
+    // 1. Impede o usuário de fazer login no futuro (bane por 100 anos)
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      { ban_duration: '36500s' } // 'd' para dias. 36500 dias = 100 anos
+    );
+
+    if (authError) throw new Error(`Falha ao banir na autenticação: ${authError.message}`);
+
+    // 2. Atualiza o status na nossa tabela de perfis
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ status: 'blocked' })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (profileError) throw new Error(`Falha ao atualizar status do perfil: ${profileError.message}`);
+    
+    return profile as User;
+  }
+
+  // Função completa para REATIVAR um usuário
+  async adminUnblockUser(userId: string): Promise<User> {
+    console.log(`ADMIN: Reativando usuário ${userId}`);
+
+    // 1. Remove o banimento da autenticação
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      { ban_duration: 'none' } 
+    );
+
+    if (authError) throw new Error(`Falha ao remover ban da autenticação: ${authError.message}`);
+
+    // 2. Atualiza o status na nossa tabela de perfis
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ status: 'active' })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (profileError) throw new Error(`Falha ao atualizar status do perfil: ${profileError.message}`);
+
+    return profile as User;
+  }
+
+  //admin deleta usuario 
+  async adminDeleteUser(userId: string): Promise<void> {
+    console.log(`ADMIN: Tentando excluir o usuário com ID: ${userId}`);
+    
+    const { data, error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) {
+      console.error(`ADMIN: Erro ao excluir usuário ${userId}`, error);
+      throw new Error(`Falha ao excluir usuário: ${error.message}`);
+    }
+
+    console.log(`Usuário ${userId} excluído com sucesso da autenticação.`, data);
+  }
+
+  // admin deleta anuncio de animal
+
+  async adminDeleteAnimal(animalId: string): Promise<void> {
+    console.log(`ADMIN: Deletando animal com ID: ${animalId}`);
+    
+    // Usamos o supabaseAdmin para ignorar RLS e garantir a permissão
+    const { error } = await supabaseAdmin
+      .from('animals')
+      .delete()
+      .eq('id', animalId);
+
+    if (error) {
+      console.error(`ADMIN: Erro ao deletar animal ${animalId}`, error);
+      throw new Error(`Falha ao deletar anúncio: ${error.message}`);
+    }
+    
+    console.log(`Animal ${animalId} deletado com sucesso.`);
   }
 
   async createAnimal(animalData: Partial<Animal>): Promise<Animal> {
@@ -624,6 +728,23 @@ class ApiService {
     }
 
     return data as Animal;
+  }
+
+    // salva o numero de visualizacoes para determinado animal
+  async recordAnimalView(animalId: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('increment_view_count', { 
+        animal_id_to_update: animalId 
+      });
+
+      if (error) {
+        // Não lançamos um erro para o usuário, apenas registramos no console,
+        // pois a falha em contar uma view não deve quebrar a experiência.
+        console.error('Failed to record animal view:', error.message);
+      }
+    } catch (err) {
+      console.error('Error calling RPC:', err);
+    }
   }
 
   async updateAnimal(id: string, animalData: Partial<Animal>): Promise<Animal> {

@@ -102,11 +102,13 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
       
       // Upload das fotos (agora obrigatório)
       let imageUrl = null;
+      let additionalImagesUrls = null;
       console.log('Fazendo upload de', photos.length, 'foto(s)...');
       try {
         const photoFiles = photos.map(photo => photo.file);
         const uploadedUrls = await api.uploadAnimalPhotos(user.id, photoFiles);
         imageUrl = uploadedUrls[0]; // Usar a primeira foto como principal
+        additionalImagesUrls = uploadedUrls.slice(1);
         console.log('Upload concluído. URL principal:', imageUrl);
       } catch (uploadError) {
         console.error('Erro no upload das fotos:', uploadError);
@@ -129,6 +131,7 @@ export function RegisterAnimalPage({ onBack, onRegisterSuccess, user }: Register
         temperament: formData.temperament || null,
         adoption_requirements: formData.adoptionRequirements || null,
         image_url: imageUrl,
+        additional_images: additionalImagesUrls,
         status: 'available' as const
         // advertiser_id será definido automaticamente pela API
       };

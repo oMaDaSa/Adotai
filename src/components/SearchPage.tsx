@@ -8,6 +8,7 @@ import { Filter, MapPin, Heart, Eye, Flag } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
 import { ReportDialog } from "./ReportDialog";
+import { translateSize } from "@/utils/translate";
 
 interface SearchPageProps {
   onAdoptAnimal: (animalId: string) => void;
@@ -20,6 +21,7 @@ interface Filters {
   species: string;
   size: string;
   location: string;
+  gender: string;
 }
 
 export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }: SearchPageProps) {
@@ -36,6 +38,7 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
     species: "all",
     size: "all",
     location: "all",
+    gender: "all", 
   });
 
   const locations = [
@@ -88,6 +91,12 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
       );
     }
 
+    if (filters.gender && filters.gender !== "all") {
+      filtered = filtered.filter(animal => 
+        animal.gender?.toLowerCase() === filters.gender.toLowerCase()
+      );
+    }
+
     setFilteredAnimals(filtered);
   };
 
@@ -103,6 +112,7 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
       species: "all",
       size: "all",  
       location: "all",
+      gender: "all", 
     });
   };
 
@@ -223,6 +233,21 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                   </Select>
                 </div>
 
+              {/* Gender Filter */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Gênero</label>
+                  <Select value={filters.gender} onValueChange={(value) => handleFilterChange('gender', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os gêneros" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os gêneros</SelectItem>
+                      <SelectItem value="male">Macho</SelectItem>
+                      <SelectItem value="female">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Location Filter */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Localização</label>
@@ -285,26 +310,21 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                     onClose={() => setIsReportDialogOpen(false)}
                   />
                 )}
-                <div className="relative h-48">
+                <div className="aspect-square w-full relative"> 
                   <ImageWithFallback
                     src={animal.image_url || animal.image || '/default-pet.svg'}
-                    alt={animal.name}
-                    className="w-full h-full object-cover"
+                    alt={animal.name}              
+                    className="w-full h-full object-cover" 
                   />
                   <div className="absolute top-3 left-3 flex space-x-2">
                     <Badge className="bg-white text-gray-800 font-medium">
                       {animal.species === 'dog' ? '🐕 Cachorro' : 
                        animal.species === 'cat' ? '🐱 Gato' : 
-                       animal.species === 'bird' ? '🐦 Pássaro' : 
-                       animal.species === 'rabbit' ? '🐰 Coelho' : 
                        '🐾 ' + animal.species}
                     </Badge>
                     {animal.size && (
                       <Badge variant="outline" className="bg-white text-gray-600">
-                        {animal.size === 'small' ? 'Pequeno' : 
-                         animal.size === 'medium' ? 'Médio' : 
-                         animal.size === 'large' ? 'Grande' : 
-                         animal.size}
+                        {translateSize(animal.size)}
                       </Badge>
                     )}
                   </div>

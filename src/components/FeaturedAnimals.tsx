@@ -7,17 +7,16 @@ import { Heart, MapPin, Clock, Eye, MessageCircle, Flag } from "lucide-react";
 import { api } from "../lib/api";
 import type { Animal, User } from "../types";
 import { ReportDialog } from "./ReportDialog";
+import { translateSize } from "@/utils/translate";
 
 interface FeaturedAnimalsProps {
   onViewMore: () => void;
-  onAdoptAnimal: (animalId: string) => void;
-  onStartConversation?: (animalId: string, advertiserId: string) => void;
   onViewProfile: (userId: string) => void;
   onViewDetails: (animalId: string) => void; 
   user: User | null;
 }
 
-export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation,onViewProfile, onViewDetails, user }: FeaturedAnimalsProps) {
+export function FeaturedAnimals({ onViewMore,onViewProfile, onViewDetails, user }: FeaturedAnimalsProps) {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,10 +130,9 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {animals.map((animal) => (
-
-            <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
               { user &&
-              <button
+                <button
                   onClick={() => handleReportClick(animal.id)}
                   className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-600 hover:text-red-600 transition-colors"
                   aria-label="Denunciar anúncio"
@@ -142,16 +140,9 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
                 >
                   <Flag className="h-4 w-4" />
                 </button>
-                }
-
-                {reportingAnimalId && user && (
-                  <ReportDialog
-                    animalId={reportingAnimalId}
-                    isOpen={isReportDialogOpen}
-                    onClose={() => setIsReportDialogOpen(false)}
-                  />
-                )}
-              <div className="relative h-48">
+              }
+              
+              <div className="aspect-square w-full relative">
                 <ImageWithFallback
                   src={animal.image_url || animal.image || '/default-pet.svg'}
                   alt={animal.name}
@@ -161,16 +152,11 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
                   <Badge className="bg-white text-gray-800 font-medium">
                     {animal.species === 'dog' ? '🐕 Cachorro' : 
                      animal.species === 'cat' ? '🐱 Gato' : 
-                     animal.species === 'bird' ? '🐦 Pássaro' : 
-                     animal.species === 'rabbit' ? '🐰 Coelho' : 
                      '🐾 ' + animal.species}
                   </Badge>
                   {animal.size && (
                     <Badge variant="outline" className="bg-white text-gray-600">
-                      {animal.size === 'small' ? 'Pequeno' : 
-                       animal.size === 'medium' ? 'Médio' : 
-                       animal.size === 'large' ? 'Grande' : 
-                       animal.size}
+                      {translateSize(animal.size)}
                     </Badge>
                   )}
                 </div>
@@ -209,17 +195,15 @@ export function FeaturedAnimals({ onViewMore, onAdoptAnimal, onStartConversation
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <div>
-                      <Button 
-                        onClick={() => handleAdoptClick(animal.id)}
-                        className="w-full bg-red-500 hover:bg-red-600 text-white"
-                        size="sm"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Ver Detalhes
-                      </Button>
-                  </div>
+                <div className="space-y-2 pt-2">
+                  <Button 
+                    onClick={() => onViewDetails(animal.id)}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white"
+                    size="sm"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Detalhes
+                  </Button>
                 </div>
 
                 <div className="mt-2 text-xs text-gray-500 text-left">
