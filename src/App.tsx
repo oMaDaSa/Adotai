@@ -441,6 +441,7 @@ export default function App() {
             onBack={() => navigateTo('dashboard')}
             adopterId={chatParams.adopterId}
             animalId={chatParams.animalId}
+            onViewProfile={handleViewProfile}
             currentUserId={user.id}
             currentUserType={user.type as 'adopter' | 'advertiser'}
           />
@@ -460,6 +461,7 @@ export default function App() {
       case 'simple-chat':
         return selectedConversationId && user ? (
           <SimpleChatPage
+            onViewProfile={handleViewProfile}
             conversationId={selectedConversationId}
             onBack={() => navigateTo('simple-conversations')}
           />
