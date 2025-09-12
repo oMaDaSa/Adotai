@@ -382,6 +382,30 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
     );
   }
 
+  const renderActivityDetails = (type: string) => {
+  switch (type) {
+    case 'new_animal':
+      return {
+        // Ícone de patinha para novos animais 🐾
+        icon: <PawPrint className="h-5 w-5 text-orange-500" />,
+        title: 'Novo Animal'
+      };
+    case 'new_user':
+      return {
+        // Ícone de usuário para novos cadastros 👤
+        icon: <Users className="h-5 w-5 text-blue-500" />,
+        title: 'Novo Usuário'
+      };
+    // Você pode adicionar mais casos aqui para outros tipos de atividade
+    default:
+      return {
+        // Ícone genérico para outras atividades
+        icon: <Activity className="h-5 w-5 text-gray-500" />,
+        title: type.replace('_', ' ').toUpperCase()
+      };
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -489,29 +513,39 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid lg:grid-cols-2 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Activity className="h-5 w-5 mr-2" />
-                    Atividade Recente
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {recentActivity.map(activity => (
-                      <div key={activity.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        {/* Você pode adicionar ícones baseados no activity.type */}
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.type.replace('_', ' ').toUpperCase()}</p>
-                          <p className="text-xs text-gray-500">{activity.description}</p>
-                        </div>
-                        {/* Formatar a data de activity.created_at */}
-                        <span className="text-xs text-gray-400">{formatDate(activity.created_at)}</span>
-                      </div>
-                    ))}
+  <CardHeader>
+    <CardTitle className="flex items-center">
+      <Activity className="h-5 w-5 mr-2" />
+      Atividade Recente
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {/* Mostra apenas as 5 atividades mais recentes para não poluir a tela */}
+            {recentActivity.slice(0, 5).map(activity => {
+              // Chama a nossa nova função para pegar o ícone e o título corretos
+              const { icon, title } = renderActivityDetails(activity.type);
+              
+              return (
+                <div key={activity.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-100 transition-colors">
+                  {/* Ícone adicionado aqui */}
+                  <div className="flex-shrink-0">
+                    {icon}
                   </div>
-                </CardContent>
-              </Card>
-
+                  
+                  <div className="flex-1">
+                    {/* Título traduzido e estilizado */}
+                    <p className="text-sm font-medium">{title}</p>
+                    <p className="text-xs text-gray-500">{activity.description}</p>
+                  </div>
+                  
+                  <span className="text-xs text-gray-400">{formatDate(activity.created_at)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">

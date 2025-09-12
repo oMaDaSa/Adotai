@@ -125,7 +125,7 @@ export default function App() {
         navigateTo('admin-dashboard');
       } else if (selectedAnimalId && userData.type === 'adopter') {
         // Redireciona para a página de solicitação de adoção se há um animal selecionado
-        navigateTo('adoption-request');
+        navigateTo('animal-details');
       } else {
         navigateTo('home');
       }

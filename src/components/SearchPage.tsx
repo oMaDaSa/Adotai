@@ -288,7 +288,7 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAnimals.map((animal) => (
               
-              <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow bg-white">
+              <Card key={animal.id} className="relative overflow-hidden hover:shadow-lg transition-shadow bg-white flex flex-col">
                 { user &&
               <button
                   onClick={() => handleReportClick(animal.id)}
@@ -358,34 +358,37 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                   )}
                 </div>
                 
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold">{animal.name}</h3>
-                    {animal.breed && (
-                      <div className="text-right text-sm text-gray-500">
-                        <span>{animal.breed}</span>
-                      </div>
-                    )}
-                  </div>
+                <CardContent className="p-4 flex flex-col flex-1">
                   
-                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {animal.advertiser_address || 'Localização não informada'}
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold">{animal.name}</h3>
+                      {animal.breed && (
+                        <div className="text-right text-sm text-gray-500">
+                          <span>{animal.breed}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {animal.advertiser_address || 'Localização não informada'}
+                    </div>
+
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {animal.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {animal.color && (
+                        <Badge variant="secondary" className="text-xs">
+                          {animal.color}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {animal.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {animal.color && (
-                      <Badge variant="secondary" className="text-xs">
-                        {animal.color}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex space-x-2">
-          
+                  <div className="mt-auto">
+                    <div className="flex space-x-2">
                       <Button 
                         onClick={() => handleAdoptClick(animal.id)}
                         className="flex-1 bg-red-500 hover:bg-red-600 text-white"
@@ -393,19 +396,19 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
                         <Heart className="h-4 w-4 mr-2" />
                         Ver Detalhes
                       </Button>
-                    
-                  </div>
+                    </div>
 
-                  <div className="mt-2 text-xs text-gray-500 text-left">
-                  <span>Por: </span>
-                  <button 
-                    onClick={() => onViewProfile(animal.advertiser_id)}
-                    className="font-medium text-blue-600 hover:underline"
-                    disabled={!animal.advertiser_id}
-                  >
-                    {animal.advertiser_name}
-                  </button>
-                </div>
+                    <div className="mt-2 text-xs text-gray-500 text-left">
+                      <span>Por: </span>
+                      <button 
+                        onClick={() => onViewProfile(animal.advertiser_id)}
+                        className="font-medium text-blue-600 hover:underline"
+                        disabled={!animal.advertiser_id}
+                      >
+                        {animal.advertiser_name}
+                      </button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -414,4 +417,5 @@ export function SearchPage({ onAdoptAnimal, user, onViewProfile, onViewDetails }
       </div>
     </div>
   );
+  
 }

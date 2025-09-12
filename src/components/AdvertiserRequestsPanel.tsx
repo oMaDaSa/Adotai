@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { api } from "../lib/api";
-import type { AdoptionRequest } from "../types";
+
 import { 
   ArrowLeft,
   Eye,
@@ -260,22 +260,51 @@ export function AdvertiserRequestsPanel({ onBack, onViewRequest, onStartChat }: 
     return acc;
   }, {} as Record<string, { animalName: string; animalPhoto: string; requests: AdoptionRequest[] }>);
 
-  const handleApproveRequest = async (requestId: string) => {
+  const handleApproveRequest = async (approvedRequest: AdoptionRequest) => {
+    const { id: approvedRequestId, animalId } = approvedRequest;
+
+    const otherPendingRequests = allRequests.filter(req =>
+      req.animalId === animalId &&
+      req.status === 'pending' &&
+      req.id !== approvedRequestId
+    );
+
     try {
-      await api.updateAdoptionRequest(requestId, { status: 'approved' });
-      
-      // Atualizar o estado local
-      setAllRequests(prev => prev.map(request => 
-        request.id === requestId 
-          ? { ...request, status: 'approved' as const }
-          : request
-      ));
-      
-      // Aqui você poderia mostrar uma notificação de sucesso
-      console.log('Solicitação aprovada com sucesso!');
+      console.log('entrou aqui')
+      const updatePromises = [
+        // 1. ATUALIZA O ANIMAL PARA 'ADOTADO' USANDO A SUA FUNÇÃO
+        api.updateAnimal(animalId, { status: 'adopted' }),
+
+        // 2. Aprova a solicitação escolhida
+        api.updateAdoptionRequest(approvedRequestId, { status: 'approved' }),
+
+        // 3. Rejeita as outras solicitações pendentes
+        ...otherPendingRequests.map(req =>
+          api.updateAdoptionRequest(req.id, { status: 'rejected' })
+        ),
+      ];
+
+      await Promise.all(updatePromises);
+
+      // Atualiza o estado local para refletir as mudanças na UI
+      setAllRequests(prevRequests =>
+        prevRequests.map(req => {
+          if (req.id === approvedRequestId) {
+            return { ...req, status: 'approved' as const };
+          }
+          if (req.animalId === animalId && req.id !== approvedRequestId) {
+            return { ...req, status: 'rejected' as const };
+          }
+          return req;
+        })
+      );
+
+      console.log('Adoção concluída com sucesso!');
+      // TODO: Adicionar notificação de sucesso para o usuário
+
     } catch (err: any) {
-      console.error('Erro ao aprovar solicitação:', err);
-      // Aqui você poderia mostrar uma notificação de erro
+      console.error('Erro ao processar a adoção:', err);
+      // TODO: Adicionar notificação de erro para o usuário
     }
   };
 
@@ -507,7 +536,7 @@ export function AdvertiserRequestsPanel({ onBack, onViewRequest, onStartChat }: 
                                   <Button 
                                     size="sm" 
                                     className="bg-green-500 hover:bg-green-600 text-white"
-                                    onClick={() => handleApproveRequest(request.id)}
+                                    onClick={() => handleApproveRequest(request)}
                                   >
                                     <Check className="h-4 w-4 mr-1" />
                                     Aprovar

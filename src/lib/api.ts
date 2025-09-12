@@ -746,6 +746,7 @@ class ApiService {
   }
 
   async updateAnimal(id: string, animalData: Partial<Animal>): Promise<Animal> {
+    console.log(animalData)
     const { data, error } = await supabase
       .from('animals')
       .update(animalData)
@@ -759,6 +760,8 @@ class ApiService {
 
     return data as Animal;
   }
+
+  
 
   async deleteAnimal(id: string): Promise<void> {
     const { error } = await supabase
