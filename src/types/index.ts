@@ -31,7 +31,7 @@ export interface Animal {
   advertiser_address?: string; // From view/join
   characteristics?: string[]; // This may need to be handled differently
   special_needs?: string;
-  status: 'available' | 'adopted' | 'pending';
+  status: 'available' | 'adopted' ;
   created_at: string;
   updated_at: string;
   // Legacy fields for compatibility
@@ -50,10 +50,12 @@ export interface AdoptionRequest {
   animal_id: string;
   animal_name?: string; // From view/join
   animal_species?: string; // From view/join
+  animal_image_url?: string;
   animal_breed?: string; // From view/join
   animal_image?: string;
   adopter_id: string;
   adopter_name?: string; // From view/join
+  adopter_phone?: string;
   adopter_email?: string; // From view/join
   advertiser_id?: string; // From join through animal
   advertiser_name?: string; // From view/join

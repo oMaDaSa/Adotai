@@ -27,10 +27,11 @@ interface ChatPageProps {
   animalId: string;
   currentUserId: string;
   currentUserType: 'adopter' | 'advertiser';
+  onViewProfile: (userId: string) => void;
   onBack: () => void;
 }
 
-export function ChatPage({ adopterId, animalId, currentUserId, currentUserType, onBack }: ChatPageProps) {
+export function ChatPage({ adopterId, animalId, currentUserId, currentUserType, onBack, onViewProfile }: ChatPageProps) {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [conversation, setConversation] = useState<any>(null);
@@ -216,6 +217,8 @@ export function ChatPage({ adopterId, animalId, currentUserId, currentUserType, 
     return null;
   }
 
+  const otherUser = actualCurrentUserType === 'adopter' ? advertiser : adopter;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -241,8 +244,11 @@ export function ChatPage({ adopterId, animalId, currentUserId, currentUserType, 
                   <User className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {actualCurrentUserType === 'adopter' ? advertiser.name : adopter.name}
+                  <h3 
+                    className="font-semibold text-gray-900 cursor-pointer hover:underline"
+                    onClick={() => onViewProfile(otherUser.id)}
+                  >
+                    {otherUser.name}
                   </h3>
                   <p className="text-sm text-gray-500">Conversa sobre {animal.name}</p>
                 </div>

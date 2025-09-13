@@ -27,7 +27,6 @@ import {
 } from "./pages";
 import { SimpleConversationsList } from "./components/SimpleConversationsList";
 import { SimpleChatPage } from "./components/SimpleChatPage";
-import { ChatDiagnostic } from "./components/ChatDiagnostic";
 import { startConversation } from "./lib/chat-helper";
 import type { PageType, AccountType, User } from "./types";
 
@@ -125,7 +124,7 @@ export default function App() {
         navigateTo('admin-dashboard');
       } else if (selectedAnimalId && userData.type === 'adopter') {
         // Redireciona para a página de solicitação de adoção se há um animal selecionado
-        navigateTo('adoption-request');
+        navigateTo('animal-details');
       } else {
         navigateTo('home');
       }
@@ -441,6 +440,7 @@ export default function App() {
             onBack={() => navigateTo('dashboard')}
             adopterId={chatParams.adopterId}
             animalId={chatParams.animalId}
+            onViewProfile={handleViewProfile}
             currentUserId={user.id}
             currentUserType={user.type as 'adopter' | 'advertiser'}
           />
@@ -460,6 +460,7 @@ export default function App() {
       case 'simple-chat':
         return selectedConversationId && user ? (
           <SimpleChatPage
+            onViewProfile={handleViewProfile}
             conversationId={selectedConversationId}
             onBack={() => navigateTo('simple-conversations')}
           />
@@ -603,9 +604,6 @@ export default function App() {
         
         
       )}
-      
-      {/* Componente de diagnóstico para debug */}
-      <ChatDiagnostic />
     </div>
   );
 }

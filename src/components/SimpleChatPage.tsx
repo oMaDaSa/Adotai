@@ -17,10 +17,11 @@ import { api } from "../lib/api";
 
 interface SimpleChatPageProps {
   conversationId: string;
-  onBack: () => void;
+  onBack: () => void; 
+  onViewProfile: (userId: string) => void;
 }
 
-export function SimpleChatPage({ conversationId, onBack }: SimpleChatPageProps) {
+export function SimpleChatPage({ conversationId, onBack, onViewProfile }: SimpleChatPageProps) {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<SimpleMessage[]>([]);
   const [conversation, setConversation] = useState<SimpleConversation | null>(null);
@@ -139,6 +140,19 @@ export function SimpleChatPage({ conversationId, onBack }: SimpleChatPageProps) 
     }
   };
 
+  const getOtherUserId = (): string | null => {
+    if (!currentUser || !conversation) return null;
+    
+    // Se o usuário atual é o adotante, retorne o ID do anunciante.
+    if (currentUser.id === conversation.adopter_id) {
+      return conversation.advertiser_id;
+    } 
+    // Senão, retorne o ID do adotante.
+    else {
+      return conversation.adopter_id;
+    }
+  };
+
   const getMyRole = (): string => {
     if (!currentUser || !conversation) return '';
     
@@ -217,7 +231,15 @@ export function SimpleChatPage({ conversationId, onBack }: SimpleChatPageProps) 
                   <User className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 
+                    className="font-semibold text-gray-900 cursor-pointer hover:underline"
+                    onClick={() => {
+                      const otherUserId = getOtherUserId();
+                      if (otherUserId) {
+                        onViewProfile(otherUserId);
+                      }
+                    }}
+                  >
                     {getOtherUserName()}
                   </h3>
                   <p className="text-sm text-gray-500">
