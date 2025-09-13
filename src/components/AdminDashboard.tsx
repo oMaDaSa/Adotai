@@ -396,6 +396,30 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
         icon: <Users className="h-5 w-5 text-blue-500" />,
         title: 'Novo Usuário'
       };
+    case 'new_adoption_request':
+      return {
+        // Ícone de coração para pedidos de adoção
+        icon: <MessageSquare className="h-5 w-5 text-purple-500" />,
+        title: 'Pedido de Adoção'
+      };
+    case 'adoption_approved':
+      return {
+        // Ícone de check para pedidos aprovados
+        icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+        title: 'Adoção Aprovada'
+      };
+    case 'adoption_rejected':
+      return {
+        // Ícone de X para pedidos recusados
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+        title: 'Adoção Recusada'
+      };
+    case 'adoption_completed':
+      return {
+        // Ícone de coração com mãos para adoções concluídas
+        icon: <CheckCircle className="h-5 w-5 text-blue-500" />,
+        title: 'Adoção Concluída'
+      };
     // Você pode adicionar mais casos aqui para outros tipos de atividade
     default:
       return {

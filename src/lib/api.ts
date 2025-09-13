@@ -70,6 +70,19 @@ class ApiService {
       }
 
       console.log('Perfil atualizado com sucesso:', profile);
+      
+      // Registrar log de atividade para novo usuário
+      this.logActivity(
+        'new_user',
+        `Novo usuário cadastrado: ${userData.name}`,
+        {
+          user_id: profile.id,
+          user_name: profile.name,
+          user_type: profile.type,
+          email: profile.email
+        }
+      );
+      
       return { user: profile as User };
 
     } catch (error: any) {
@@ -725,6 +738,18 @@ class ApiService {
       throw new Error(`Failed to create animal: ${error.message}`);
     }
 
+    // Registrar log de atividade para novo animal
+    this.logActivity(
+      'new_animal',
+      `Novo animal cadastrado: ${animalData.name || 'Animal'}`,
+      {
+        animal_id: data.id,
+        animal_name: data.name,
+        species: data.species,
+        advertiser_id: profile.id
+      }
+    );
+
     return data as Animal;
   }
 
@@ -890,6 +915,47 @@ class ApiService {
     return transformedData as AdoptionRequest[];
   }
 
+  // Função para registrar logs de atividade usando a estrutura existente da tabela
+  // Estrutura: id, created_at, type, description, actor_id, entity_id
+  async logActivity(type: string, description: string, additionalData?: any): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Extrair entity_id dos dados adicionais se disponível
+      let entityId = null;
+      if (additionalData) {
+        // Priorizar IDs mais específicos
+        entityId = additionalData.adoption_request_id || 
+                  additionalData.animal_id || 
+                  additionalData.user_id || 
+                  additionalData.conversation_id || 
+                  null;
+      }
+      
+      const logData = {
+        type,
+        description,
+        actor_id: user?.id || null,  // Quem fez a ação
+        entity_id: entityId          // ID da entidade afetada
+      };
+
+      console.log(`[ACTIVITY LOG] ${type}: ${description}`, additionalData);
+
+      const { error } = await supabaseAdmin
+        .from('activity_log')
+        .insert(logData);
+
+      if (error) {
+        console.warn('Erro ao salvar log no banco:', error.message);
+        console.warn('Dados tentados:', logData);
+      } else {
+        console.log(`✅ Log salvo no banco: ${type} - ${description}`);
+      }
+    } catch (err) {
+      console.error('Erro ao registrar log de atividade:', err);
+    }
+  }
+
   async adminGetRecentActivity(): Promise<any[]> {
   const { data, error } = await supabaseAdmin
     .from('activity_log')
@@ -1035,10 +1101,10 @@ class ApiService {
 
     console.log('Creating adoption request with data:', requestData);
 
-    // Verificar se o animal existe
+    // Verificar se o animal existe e buscar nome para o log
     const { data: animal, error: animalError } = await supabase
       .from('animals')
-      .select('id, advertiser_id')
+      .select('id, name, advertiser_id')
       .eq('id', requestData.animal_id)
       .single();
 
@@ -1069,10 +1135,30 @@ class ApiService {
     }
 
     console.log('Adoption request created successfully:', data);
+    
+    // Registrar log de atividade
+    this.logActivity(
+      'new_adoption_request',
+      `Novo pedido de adoção para ${animal.name || 'Animal'}`,
+      {
+        adoption_request_id: data.id,
+        animal_id: animal.id,
+        adopter_id: user.id,
+        status: 'pending'
+      }
+    );
+    
     return data as AdoptionRequest;
   }
 
   async updateAdoptionRequest(id: string, updateData: Partial<AdoptionRequest>): Promise<AdoptionRequest> {
+    // Buscar dados antes da atualização para o log
+    const { data: beforeData } = await supabase
+      .from('adoption_requests')
+      .select('*, animal:animals(name), adopter:profiles(name)')
+      .eq('id', id)
+      .single();
+
     const { data, error } = await supabase
       .from('adoption_requests')
       .update(updateData)
@@ -1082,6 +1168,40 @@ class ApiService {
 
     if (error) {
       throw new Error(`Failed to update adoption request: ${error.message}`);
+    }
+
+    // Registrar log se o status mudou
+    if (updateData.status && beforeData && updateData.status !== beforeData.status) {
+      const animalName = beforeData.animal?.name || 'Animal';
+      const adopterName = beforeData.adopter?.name || 'Adotante';
+      
+      let logType = '';
+      let description = '';
+      
+      if (updateData.status === 'approved') {
+        logType = 'adoption_approved';
+        description = `Pedido de adoção aprovado - ${adopterName} para ${animalName}`;
+      } else if (updateData.status === 'rejected') {
+        logType = 'adoption_rejected';
+        description = `Pedido de adoção recusado - ${adopterName} para ${animalName}`;
+      } else if (updateData.status === 'completed') {
+        logType = 'adoption_completed';
+        description = `Adoção concluída - ${animalName} adotado por ${adopterName}`;
+      }
+      
+      if (logType && description) {
+        this.logActivity(
+          logType,
+          description,
+          {
+            adoption_request_id: id,
+            animal_id: beforeData.animal_id,
+            adopter_id: beforeData.adopter_id,
+            old_status: beforeData.status,
+            new_status: updateData.status
+          }
+        );
+      }
     }
 
     return data as AdoptionRequest;
