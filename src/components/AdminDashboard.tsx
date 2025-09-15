@@ -66,6 +66,15 @@ interface Report {
   reported_animal?: { id: string; name: string; };
 }
 
+interface ActivityLog {
+  id: string;
+  type: string;
+  description: string;
+  actor_id: string;
+  entity_id?: string;
+  created_at: string;
+}
+
 interface AnimalAd {
   id: string;
   name: string;
@@ -90,7 +99,6 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
   const [userFilterStatus, setUserFilterStatus] = useState("all");
   const [adSearchTerm, setAdSearchTerm] = useState("");
   const [adFilterStatus, setAdFilterStatus] = useState("all");
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
   // State for data
   const [users, setUsers] = useState<User[]>([]);
@@ -99,7 +107,8 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reports, setReports] = useState<Report[]>([]); 
+  const [reports, setReports] = useState<Report[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   
   useEffect(() => {
     fetchAdminData();
@@ -111,22 +120,22 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
       setError(null);
       
       // ALTERADO: Usando as novas funções de admin
-      const [usersData, animalsData, requestsData, reportsData, conversationsData] = await Promise.all([
+      const [usersData, animalsData, requestsData, reportsData, conversationsData, activityLogsData] = await Promise.all([
         api.adminGetAllUsers(),
         api.adminGetAllAnimals(),
         api.adminGetAllAdoptionRequests(),
         api.adminGetPendingReports(),
-        api.adminGetAllConversations()
+        api.adminGetAllConversations(),
+        api.adminGetActivityLogs(10) // Buscar os 10 logs mais recentes
       ]);
 
-      const activityData = await api.adminGetRecentActivity();
-      setRecentActivity(activityData);
       
       setUsers(usersData);
       setAnimals(animalsData);
       setAdoptionRequests(requestsData);
       setReports(reportsData); 
       setConversations(conversationsData);
+      setActivityLogs(activityLogsData);
 
     } catch (err: any) { // Adicionado 'any' para acessar a propriedade 'message'
       console.error('Error fetching admin data:', err);
@@ -385,23 +394,64 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
   const renderActivityDetails = (type: string) => {
   switch (type) {
     case 'new_animal':
+    case 'animal_created':
       return {
-        // Ícone de patinha para novos animais 🐾
         icon: <PawPrint className="h-5 w-5 text-orange-500" />,
         title: 'Novo Animal'
       };
     case 'new_user':
+    case 'user_created':
       return {
-        // Ícone de usuário para novos cadastros 👤
         icon: <Users className="h-5 w-5 text-blue-500" />,
         title: 'Novo Usuário'
       };
-    // Você pode adicionar mais casos aqui para outros tipos de atividade
+    case 'adoption_request':
+    case 'adoption_request_created':
+      return {
+        icon: <MessageSquare className="h-5 w-5 text-green-500" />,
+        title: 'Solicitação de Adoção'
+      };
+    case 'conversation_created':
+    case 'new_conversation':
+      return {
+        icon: <MessageSquare className="h-5 w-5 text-purple-500" />,
+        title: 'Nova Conversa'
+      };
+    case 'report_created':
+    case 'new_report':
+      return {
+        icon: <Flag className="h-5 w-5 text-red-500" />,
+        title: 'Nova Denúncia'
+      };
+    case 'user_login':
+      return {
+        icon: <UserCheck className="h-5 w-5 text-green-600" />,
+        title: 'Login de Usuário'
+      };
+    case 'animal_updated':
+      return {
+        icon: <Edit className="h-5 w-5 text-yellow-500" />,
+        title: 'Animal Atualizado'
+      };
+    case 'adoption_approved':
+      return {
+        icon: <CheckCircle className="h-5 w-5 text-green-600" />,
+        title: 'Adoção Aprovada'
+      };
+    case 'adoption_rejected':
+      return {
+        icon: <XCircle className="h-5 w-5 text-red-500" />,
+        title: 'Adoção Rejeitada'
+      };
+    case 'user_blocked':
+      return {
+        icon: <Ban className="h-5 w-5 text-red-600" />,
+        title: 'Usuário Bloqueado'
+      };
     default:
       return {
-        // Ícone genérico para outras atividades
         icon: <Activity className="h-5 w-5 text-gray-500" />,
-        title: type.replace('_', ' ').toUpperCase()
+        title: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
       };
   }
 };
@@ -513,39 +563,48 @@ export function AdminDashboard({ onBack, onLogout, onViewProfile, onViewDetails}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid lg:grid-cols-2 gap-6">
               <Card>
-  <CardHeader>
-    <CardTitle className="flex items-center">
-      <Activity className="h-5 w-5 mr-2" />
-      Atividade Recente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {/* Mostra apenas as 5 atividades mais recentes para não poluir a tela */}
-            {recentActivity.slice(0, 5).map(activity => {
-              // Chama a nossa nova função para pegar o ícone e o título corretos
-              const { icon, title } = renderActivityDetails(activity.type);
-              
-              return (
-                <div key={activity.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-100 transition-colors">
-                  {/* Ícone adicionado aqui */}
-                  <div className="flex-shrink-0">
-                    {icon}
-                  </div>
-                  
-                  <div className="flex-1">
-                    {/* Título traduzido e estilizado */}
-                    <p className="text-sm font-medium">{title}</p>
-                    <p className="text-xs text-gray-500">{activity.description}</p>
-                  </div>
-                  
-                  <span className="text-xs text-gray-400">{formatDate(activity.created_at)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Activity className="h-5 w-5 mr-2" />
+                    Atividade Recente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {activityLogs.length > 0 ? (
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {activityLogs.map((log) => {
+                        const activityDetails = renderActivityDetails(log.type);
+                        return (
+                          <div key={log.id} className="flex items-start space-x-3 p-3 border rounded-lg bg-gray-50">
+                            <div className="flex-shrink-0 mt-1">
+                              {activityDetails.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900">
+                                {activityDetails.title}
+                              </p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {log.description}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                {formatDate(log.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Activity className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-sm font-medium mb-2">Nenhuma atividade recente</p>
+                      <p className="text-xs">
+                        Os logs de atividade aparecerão aqui quando houver movimentação no sistema.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">

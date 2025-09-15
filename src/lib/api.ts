@@ -548,6 +548,22 @@ class ApiService {
     return data;
   }
 
+  // Para o admin buscar logs de atividade recentes
+  async adminGetActivityLogs(limit: number = 20): Promise<any[]> {
+    console.log("ADMIN: Buscando logs de atividade...");
+    const { data, error } = await supabaseAdmin
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("ADMIN: Erro ao buscar logs de atividade", error);
+      throw new Error(`Falha ao buscar logs de atividade: ${error.message}`);
+    }
+    return data || [];
+  }
+
   // Função para o admin buscar TODAS as solicitações de adoção
   async adminGetAllAdoptionRequests(): Promise<AdoptionRequest[]> {
       console.log("ADMIN: Buscando todas as solicitações...");
@@ -890,16 +906,6 @@ class ApiService {
     return transformedData as AdoptionRequest[];
   }
 
-  async adminGetRecentActivity(): Promise<any[]> {
-  const { data, error } = await supabaseAdmin
-    .from('activity_log')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5); // Pega as 5 atividades mais recentes
-
-  if (error) throw error;
-  return data;
-}
 
   // Get adoption requests for a specific animal
   async getAnimalAdoptionRequests(animalId: string): Promise<AdoptionRequest[]> {
