@@ -10,7 +10,6 @@ import { api } from "../lib/api";
 
 import { 
   ArrowLeft,
-  Eye,
   MessageSquare,
   Check,
   X,
@@ -49,11 +48,10 @@ interface AdoptionRequest {
 
 interface AdvertiserRequestsPanelProps {
   onBack: () => void;
-  onViewRequest: (requestId: string) => void;
   onStartChat: (adopterId: string, animalId: string) => void;
 }
 
-export function AdvertiserRequestsPanel({ onBack, onViewRequest, onStartChat }: AdvertiserRequestsPanelProps) {
+export function AdvertiserRequestsPanel({ onBack, onStartChat }: AdvertiserRequestsPanelProps) {
   const [selectedTab, setSelectedTab] = useState("all");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [allRequests, setAllRequests] = useState<AdoptionRequest[]>([]);
@@ -563,14 +561,6 @@ export function AdvertiserRequestsPanel({ onBack, onViewRequest, onStartChat }: 
                               </Button>
                             </div>
                             
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => onViewRequest(request.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Ver Detalhes
-                            </Button>
                           </div>
                         </div>
                       </div>

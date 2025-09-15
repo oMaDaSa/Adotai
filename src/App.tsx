@@ -18,7 +18,6 @@ import {
   RegisterAnimalPage,
   AnimalRequestsPage,
   AdvertiserRequestsPanel,
-  RequestDetailsPage,
   ChatPage,
   ConversationsList,
   AdminLoginPage,
@@ -46,7 +45,6 @@ export default function App() {
   
   // Page-specific navigation state
   const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null);
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [chatParams, setChatParams] = useState<{
     adopterId: string;
     animalId: string;
@@ -400,10 +398,6 @@ export default function App() {
         return user?.type === 'advertiser' ? (
           <AdvertiserRequestsPanel
             onBack={() => navigateTo('dashboard')}
-            onViewRequest={(requestId) => {
-              setSelectedRequestId(requestId);
-              navigateTo('request-details');
-            }}
             onStartChat={(adopterId, animalId) => {
               setChatParams({ adopterId, animalId });
               navigateTo('chat');
@@ -411,17 +405,6 @@ export default function App() {
           />
         ) : null;
       
-      case 'request-details':
-        return selectedRequestId ? (
-          <RequestDetailsPage
-            onBack={() => navigateTo('requests-panel')}
-            requestId={selectedRequestId}
-            onStartChat={(adopterId, animalId) => {
-              setChatParams({ adopterId, animalId });
-              navigateTo('chat');
-            }}
-          />
-        ) : null;
       
       case 'conversations':
         return user ? (
@@ -490,7 +473,7 @@ export default function App() {
   const shouldShowFooter = ![
     'create-account', 'login', 'forgot-password', 'register-animal', 
     'dashboard', 'animal-requests', 'chat', 'adoption-request', 
-    'requests-panel', 'request-details', 'conversations', 'simple-conversations', 'simple-chat', 'admin-login', 'admin-dashboard', 'user-profile',
+    'requests-panel', 'conversations', 'simple-conversations', 'simple-chat', 'admin-login', 'admin-dashboard', 'user-profile',
   ].includes(currentPage);
 
   if (loading) {

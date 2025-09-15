@@ -20,7 +20,6 @@ export { UserProfilePage} from '../components/UserProfilePage';
 export { RegisterAnimalPage } from '../components/RegisterAnimalPage';
 export { AnimalRequestsPage } from '../components/AnimalRequestsPage';
 export { AdvertiserRequestsPanel } from '../components/AdvertiserRequestsPanel';
-export { RequestDetailsPage } from '../components/RequestDetailsPage';
 export {AnimalDetailsPage} from '../components/AnimalDetailsPage'
 
 // Communication pages
